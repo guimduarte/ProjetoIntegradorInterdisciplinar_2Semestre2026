@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
-import 'screens/tela_principal.dart';
+import 'screens/tela_selecao_tipo_usuario.dart';
 import 'theme/app_theme.dart';
 
 void main() {
   runApp(const MaosSolidariasApp());
 }
 
-/// App "Mãos Solidárias": plataforma que conecta profissionais
-/// autônomos (pedreiros, carpinteiros, pintores, eletricistas)
-/// a serviços de manutenção e reforma solicitados por entidades
-/// públicas e ONGs.
+/// App "Mãos Solidárias": plataforma que conecta operários voluntários
+/// (pedreiros, carpinteiros, pintores, eletricistas) a instituições
+/// sociais (ONGs, igrejas e causas sociais) que precisam de serviços
+/// de manutenção e reforma.
+///
+/// O fluxo inicial sempre parte da seleção de papel solidário
+/// (Operário ou Instituição), conforme ÉPICO 01 - US01.1 da
+/// documentação do projeto.
 class MaosSolidariasApp extends StatelessWidget {
   const MaosSolidariasApp({super.key});
 
@@ -19,7 +23,7 @@ class MaosSolidariasApp extends StatelessWidget {
       title: 'Mãos Solidárias',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const TelaPrincipal(),
+      home: const TelaSelecaoTipoUsuario(),
     );
   }
 }

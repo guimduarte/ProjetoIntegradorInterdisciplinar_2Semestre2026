@@ -21,11 +21,25 @@ class AppColors {
   static const Color amareloEscuro = Color(0xFF854F0B);
   static const Color amareloFundo = Color(0xFFFAEEDA);
 
+  // Verde: usado para status positivos (serviço concluído, aceito,
+  // disponibilidade dentro do raio) e para o nível de complexidade "Fácil".
+  static const Color verdeSucesso = Color(0xFF2E9E5B);
+  static const Color verdeEscuro = Color(0xFF1E6B3E);
+  static const Color verdeFundo = Color(0xFFE3F5EA);
+
+  // Roxo: reservado para o nível de complexidade "Avançado" e para
+  // indicadores de gamificação/pontuação de alto nível.
+  static const Color roxoAvancado = Color(0xFF6D3EA1);
+  static const Color roxoEscuro = Color(0xFF4A2A70);
+  static const Color roxoFundo = Color(0xFFF0E8F7);
+
   static const Color branco = Color(0xFFFFFFFF);
   static const Color fundoTela = Color(0xFFF7F7F9);
   static const Color textoPrimario = Color(0xFF14213D);
   static const Color textoSecundario = Color(0xFF6B7280);
   static const Color borda = Color(0xFFE5E7EB);
+  static const Color bloqueado = Color(0xFF9CA3AF);
+  static const Color bloqueadoFundo = Color(0xFFF0F1F3);
 }
 
 class AppTheme {
@@ -103,6 +117,38 @@ class AppTheme {
         elevation: 0,
       ),
       dividerColor: AppColors.borda,
+      tabBarTheme: const TabBarThemeData(
+        labelColor: AppColors.vermelhoAcao,
+        unselectedLabelColor: AppColors.textoSecundario,
+        indicatorColor: AppColors.vermelhoAcao,
+        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.vermelhoAcao
+              : AppColors.branco,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+      radioTheme: const RadioThemeData(
+        fillColor: WidgetStatePropertyAll(AppColors.vermelhoAcao),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: const WidgetStatePropertyAll(AppColors.branco),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.vermelhoAcao
+              : AppColors.textoSecundario,
+        ),
+      ),
+      sliderTheme: SliderThemeData(
+        activeTrackColor: AppColors.vermelhoAcao,
+        thumbColor: AppColors.vermelhoAcao,
+        inactiveTrackColor: AppColors.borda,
+        valueIndicatorColor: AppColors.azulConfianca,
+      ),
     );
   }
 }
