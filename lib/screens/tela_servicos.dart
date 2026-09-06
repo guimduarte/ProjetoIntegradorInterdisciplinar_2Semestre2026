@@ -5,17 +5,17 @@ import '../widgets/card_profissional.dart';
 
 /// Tela que lista os profissionais/serviços disponíveis, com
 /// filtro por categoria e opção de solicitar atendimento.
-class ServicesScreen extends StatefulWidget {
-  final String initialCategory;
+class TelaServicosDisponiveis extends StatefulWidget {
+  final String categoriaInicial;
 
-  const ServicesScreen({super.key, this.initialCategory = 'Todos'});
+  const TelaServicosDisponiveis({super.key, this.categoriaInicial = 'Todos'});
 
   @override
-  State<ServicesScreen> createState() => _ServicesScreenState();
+  State<TelaServicosDisponiveis> createState() => _TelaServicosDisponiveisState();
 }
 
-class _ServicesScreenState extends State<ServicesScreen> {
-  static const List<String> _categories = [
+class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
+  static const List<String> _categorias = [
     'Todos',
     'Pedreiro',
     'Carpinteiro',
@@ -23,13 +23,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
     'Eletricista',
   ];
 
-  late String _selectedCategory = widget.initialCategory;
+  late String _categoriaSelecionada = widget.categoriaInicial;
 
-  List<Profissional> get _filteredProfessionals {
-    if (_selectedCategory == 'Todos') return mockProfessionals;
-    return mockProfessionals
+  List<Profissional> get _profissionaisFiltrados {
+    if (_categoriaSelecionada == 'Todos') return mockProfissionais;
+    return mockProfissionais
         .where((p) => p.especialidade.toLowerCase().contains(
-              _selectedCategory.toLowerCase().substring(0, 5),
+              _categoriaSelecionada.toLowerCase().substring(0, 5),
             ))
         .toList();
   }
@@ -54,7 +54,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
               decoration: InputDecoration(
                 hintText: 'Filtrar por especialidade',
                 prefixIcon:
-                    const Icon(Icons.search, color: AppColors.textoSecundario),
+                    const Icon(Icons.search, color: CoresApp.textoSecundario),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -67,25 +67,25 @@ class _ServicesScreenState extends State<ServicesScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              itemCount: _categories.length,
+              itemCount: _categorias.length,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                final category = _categories[index];
-                final selected = category == _selectedCategory;
+                final categoria = _categorias[index];
+                final selecionado = categoria == _categoriaSelecionada;
                 return ChoiceChip(
-                  label: Text(category),
-                  selected: selected,
-                  onSelected: (_) => setState(() => _selectedCategory = category),
-                  selectedColor: AppColors.vermelhoAcao,
-                  backgroundColor: AppColors.branco,
+                  label: Text(categoria),
+                  selected: selecionado,
+                  onSelected: (_) => setState(() => _categoriaSelecionada = categoria),
+                  selectedColor: CoresApp.vermelhoAcao,
+                  backgroundColor: CoresApp.branco,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: selected ? AppColors.branco : AppColors.azulConfianca,
+                    color: selecionado ? CoresApp.branco : CoresApp.azulConfianca,
                   ),
                   shape: StadiumBorder(
                     side: BorderSide(
-                      color: selected ? AppColors.vermelhoAcao : AppColors.azulConfianca,
+                      color: selecionado ? CoresApp.vermelhoAcao : CoresApp.azulConfianca,
                     ),
                   ),
                 );
@@ -95,13 +95,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              itemCount: _filteredProfessionals.length,
+              itemCount: _profissionaisFiltrados.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
-                final professional = _filteredProfessionals[index];
+                final profissional = _profissionaisFiltrados[index];
                 return CardProfissional(
-                  profissional: professional,
-                  onRequest: () => _showRequestConfirmation(context, professional),
+                  profissional: profissional,
+                  onRequest: () => _showRequestConfirmation(context, profissional),
                 );
               },
             ),
@@ -110,8 +110,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {},
-        backgroundColor: AppColors.vermelhoAcao,
-        foregroundColor: AppColors.branco,
+        backgroundColor: CoresApp.vermelhoAcao,
+        foregroundColor: CoresApp.branco,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Oferecer meu serviço'),
       ),
@@ -162,7 +162,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
             Text(
               'Sua entidade será conectada com ${professional.nome}. '
               'Confirme para enviar os detalhes da obra.',
-              style: const TextStyle(color: AppColors.textoSecundario, fontSize: 13),
+              style: const TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
             ),
             const SizedBox(height: 16),
             SizedBox(

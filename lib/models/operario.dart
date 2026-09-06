@@ -14,7 +14,7 @@ const List<String> escoposDisponiveis = [
 ];
 
 /// Perfil completo do usuário 'Operário' (ÉPICO 01 - US01.2).
-class OperarioProfile {
+class PerfilOperario {
   final String nome;
   final String email;
   final String telefone;
@@ -28,7 +28,7 @@ class OperarioProfile {
   final int pontos;
   final double avaliacaoMedia;
 
-  const OperarioProfile({
+  const PerfilOperario({
     required this.nome,
     required this.email,
     required this.telefone,
@@ -43,8 +43,8 @@ class OperarioProfile {
     required this.avaliacaoMedia,
   });
 
-  ExperienceLevel get nivelExperiencia =>
-      ExperienceLevelX.fromServicosRealizados(servicosRealizados);
+  NivelExperiencia get nivelExperiencia =>
+      NivelExperienciaX.deServicosRealizados(servicosRealizados);
 
   String get iniciais {
     final partes = nome.trim().split(' ');
@@ -53,7 +53,7 @@ class OperarioProfile {
         .toUpperCase();
   }
 
-  OperarioProfile copyWith({
+  PerfilOperario copyWith({
     String? nome,
     String? email,
     String? telefone,
@@ -62,7 +62,7 @@ class OperarioProfile {
     List<String>? escopos,
     String? experienciasAnteriores,
   }) {
-    return OperarioProfile(
+    return PerfilOperario(
       nome: nome ?? this.nome,
       email: email ?? this.email,
       telefone: telefone ?? this.telefone,
@@ -82,7 +82,7 @@ class OperarioProfile {
 
 /// Perfil mock usado para simular a sessão autenticada do operário
 /// no protótipo (sem integração com backend/AWS).
-final OperarioProfile mockOperarioAtual = const OperarioProfile(
+final PerfilOperario mockOperarioAtual = const PerfilOperario(
   nome: 'Carlos Alberto Ferreira',
   email: 'carlos.alberto@email.com',
   telefone: '(11) 98765-4321',

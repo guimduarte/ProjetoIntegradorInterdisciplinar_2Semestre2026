@@ -3,16 +3,16 @@ import '../theme/app_theme.dart';
 
 /// Cabeçalho de seção padrão usado nas telas do app, com título e
 /// uma ação opcional ("ver tudo", "filtrar" etc.).
-class SectionTitle extends StatelessWidget {
-  final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
+class TituloSecao extends StatelessWidget {
+  final String titulo;
+  final String? rotuloAcao;
+  final VoidCallback? aoExecutarAcao;
 
-  const SectionTitle({
+  const TituloSecao({
     super.key,
-    required this.title,
-    this.actionLabel,
-    this.onAction,
+    required this.titulo,
+    this.rotuloAcao,
+    this.aoExecutarAcao,
   });
 
   @override
@@ -21,22 +21,22 @@ class SectionTitle extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          title,
+          titulo,
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: AppColors.textoPrimario,
+            color: CoresApp.textoPrimario,
           ),
         ),
-        if (actionLabel != null)
+        if (rotuloAcao != null)
           GestureDetector(
-            onTap: onAction,
+            onTap: aoExecutarAcao,
             child: Text(
-              actionLabel!,
+              rotuloAcao!,
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.vermelhoAcao,
+                color: CoresApp.vermelhoAcao,
               ),
             ),
           ),

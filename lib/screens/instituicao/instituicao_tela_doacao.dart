@@ -6,14 +6,14 @@ import '../../theme/app_theme.dart';
 /// voluntariamente via Pix para a manutenção da plataforma
 /// (ÉPICO 06 - US06.1). Interface apenas — a geração real do QR Code
 /// Pix ficará a cargo da função AWS Lambda no backend.
-class DonateScreen extends StatefulWidget {
-  const DonateScreen({super.key});
+class InstituicaoTelaDoacao extends StatefulWidget {
+  const InstituicaoTelaDoacao({super.key});
 
   @override
-  State<DonateScreen> createState() => _DonateScreenState();
+  State<InstituicaoTelaDoacao> createState() => _InstituicaoTelaDoacaoState();
 }
 
-class _DonateScreenState extends State<DonateScreen> {
+class _InstituicaoTelaDoacaoState extends State<InstituicaoTelaDoacao> {
   final List<double> _valoresPredefinidos = const [5, 10, 20, 50];
   double? _valorSelecionado = 20;
   final _valorLivreController = TextEditingController();
@@ -43,17 +43,17 @@ class _DonateScreenState extends State<DonateScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.amareloFundo,
+                color: CoresApp.amareloFundo,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: const [
-                  Icon(Icons.favorite_rounded, color: AppColors.amareloEscuro),
+                  Icon(Icons.favorite_rounded, color: CoresApp.amareloEscuro),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Sua contribuição é totalmente voluntária e ajuda a manter o app gratuito para instituições e operários.',
-                      style: TextStyle(fontSize: 12, color: AppColors.amareloEscuro),
+                      style: TextStyle(fontSize: 12, color: CoresApp.amareloEscuro),
                     ),
                   ),
                 ],
@@ -75,14 +75,14 @@ class _DonateScreenState extends State<DonateScreen> {
                     _valorLivreController.clear();
                     _qrGerado = false;
                   }),
-                  selectedColor: AppColors.vermelhoAcao,
+                  selectedColor: CoresApp.vermelhoAcao,
                   labelStyle: TextStyle(
-                    color: selected ? AppColors.branco : AppColors.azulConfianca,
+                    color: selected ? CoresApp.branco : CoresApp.azulConfianca,
                     fontWeight: FontWeight.w600,
                   ),
-                  backgroundColor: AppColors.branco,
+                  backgroundColor: CoresApp.branco,
                   shape: StadiumBorder(
-                    side: BorderSide(color: selected ? AppColors.vermelhoAcao : AppColors.azulConfianca),
+                    side: BorderSide(color: selected ? CoresApp.vermelhoAcao : CoresApp.azulConfianca),
                   ),
                 );
               }).toList(),
@@ -117,11 +117,11 @@ class _DonateScreenState extends State<DonateScreen> {
                       height: 180,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.branco,
+                        color: CoresApp.branco,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borda),
+                        border: Border.all(color: CoresApp.borda),
                       ),
-                      child: const Icon(Icons.qr_code_2_rounded, size: 150, color: AppColors.azulConfianca),
+                      child: const Icon(Icons.qr_code_2_rounded, size: 150, color: CoresApp.azulConfianca),
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -135,9 +135,9 @@ class _DonateScreenState extends State<DonateScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.fundoTela,
+                  color: CoresApp.fundoTela,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.borda),
+                  border: Border.all(color: CoresApp.borda),
                 ),
                 child: Row(
                   children: [
@@ -146,11 +146,11 @@ class _DonateScreenState extends State<DonateScreen> {
                         '00020126580014BR.GOV.BCB.PIX0136maos-solidarias-doacao${_valorFinal!.toStringAsFixed(2)}5204000053039865802BR',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11, color: AppColors.textoSecundario),
+                        style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.copy_rounded, size: 18, color: AppColors.azulClaro),
+                      icon: const Icon(Icons.copy_rounded, size: 18, color: CoresApp.azulClaro),
                       onPressed: () {
                         Clipboard.setData(const ClipboardData(text: 'PIX_COPIA_E_COLA_MAOS_SOLIDARIAS'));
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -164,7 +164,7 @@ class _DonateScreenState extends State<DonateScreen> {
               const SizedBox(height: 4),
               const Text(
                 'Copia e Cola',
-                style: TextStyle(fontSize: 11, color: AppColors.textoSecundario),
+                style: TextStyle(fontSize: 11, color: CoresApp.textoSecundario),
               ),
             ],
           ],

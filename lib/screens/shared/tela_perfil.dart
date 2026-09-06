@@ -4,41 +4,44 @@ import '../../models/operario.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_title.dart';
 import '../tela_selecao_tipo_usuario.dart';
-import '../instituicao/donate_screen.dart';
+import '../instituicao/instituicao_tela_doacao.dart';
 
 /// Tela "Editar Perfil", presente no menu inferior de ambos os
 /// perfis (ÉPICO 02 - US02.1). Para a instituição, também concentra
 /// o acesso direto ao menu "Ajude a Aplicação" (US02.2).
-class ProfileScreen extends StatelessWidget {
-  final bool isInstituicao;
+class TelaPerfil extends StatelessWidget {
+  final bool ehInstituicao;
 
-  const ProfileScreen({super.key, required this.isInstituicao});
+  const TelaPerfil({super.key, required this.ehInstituicao});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar Perfil')),
+      appBar: AppBar(
+          title: const Text('Editar Perfil'),
+          automaticallyImplyLeading: false, //desativar a seta de voltar da topbar
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildAvatarHeader(),
           const SizedBox(height: 20),
-          const SectionTitle(title: 'Dados cadastrais'),
+          const TituloSecao(titulo: 'Dados cadastrais'),
           const SizedBox(height: 10),
-          ...isInstituicao ? _buildCamposInstituicao() : _buildCamposOperario(),
+          ...ehInstituicao ? _buildCamposInstituicao() : _buildCamposOperario(),
           const SizedBox(height: 20),
-          if (isInstituicao) ...[
-            const SectionTitle(title: 'Configurações'),
+          if (ehInstituicao) ...[
+            const TituloSecao(titulo: 'Configurações'),
             const SizedBox(height: 10),
             _menuTile(
               context,
               icon: Icons.volunteer_activism_rounded,
-              iconColor: AppColors.amareloEscuro,
-              iconBg: AppColors.amareloFundo,
-              label: 'Ajude a Aplicação',
+              iconColor: CoresApp.amareloEscuro,
+              iconBg: CoresApp.amareloFundo,
+              texto: 'Ajude a Aplicação',
               subtitle: 'Contribua voluntariamente via Pix',
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DonateScreen()),
+                MaterialPageRoute(builder: (_) => const InstituicaoTelaDoacao()),
               ),
             ),
             const SizedBox(height: 20),
@@ -61,8 +64,8 @@ class ProfileScreen extends StatelessWidget {
               icon: const Icon(Icons.logout_rounded, size: 18),
               label: const Text('Sair'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.vermelhoEscuro,
-                side: const BorderSide(color: AppColors.vermelhoEscuro),
+                foregroundColor: CoresApp.vermelhoEscuro,
+                side: const BorderSide(color: CoresApp.vermelhoEscuro),
               ),
             ),
           ),
@@ -72,19 +75,19 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildAvatarHeader() {
-    final nome = isInstituicao ? mockInstituicaoAtual.nome : mockOperarioAtual.nome;
-    final subtitulo = isInstituicao ? 'Instituição' : 'Operário';
+    final nome = ehInstituicao ? mockInstituicaoAtual.nome : mockOperarioAtual.nome;
+    final subtitulo = ehInstituicao ? 'Instituição' : 'Operário';
     return Row(
       children: [
         CircleAvatar(
           radius: 32,
-          backgroundColor: AppColors.azulFundo,
+          backgroundColor: CoresApp.azulFundo,
           child: Text(
             nome.substring(0, 1).toUpperCase(),
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: AppColors.azulClaro,
+              color: CoresApp.azulClaro,
             ),
           ),
         ),
@@ -99,12 +102,12 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.vermelhoFundo,
+                  color: CoresApp.vermelhoFundo,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   subtitulo,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.vermelhoEscuro),
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: CoresApp.vermelhoEscuro),
                 ),
               ),
             ],
@@ -133,16 +136,16 @@ class ProfileScreen extends StatelessWidget {
       _field('Telefone', i.telefone),
       _field('CNPJ', i.cnpj),
       _field('Localização', i.localizacao),
-      _field('Tipo de entidade', i.tipos.map((t) => t.label).join(', ')),
+      _field('Tipo de entidade', i.tipos.map((t) => t.texto).join(', ')),
     ];
   }
 
-  Widget _field(String label, String value) {
+  Widget _field(String rotulo, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         initialValue: value,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(labelText: rotulo),
       ),
     );
   }
@@ -152,12 +155,12 @@ class ProfileScreen extends StatelessWidget {
     required IconData icon,
     required Color iconColor,
     required Color iconBg,
-    required String label,
+    required String texto,
     required String subtitle,
     required VoidCallback onTap,
   }) {
     return Material(
-      color: AppColors.branco,
+      color: CoresApp.branco,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -166,7 +169,7 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borda),
+            border: Border.all(color: CoresApp.borda),
           ),
           child: Row(
             children: [
@@ -180,12 +183,12 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                    Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textoSecundario)),
+                    Text(texto, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    Text(subtitle, style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textoSecundario),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: CoresApp.textoSecundario),
             ],
           ),
         ),

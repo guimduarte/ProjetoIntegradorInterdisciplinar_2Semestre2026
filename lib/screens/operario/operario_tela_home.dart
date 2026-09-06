@@ -4,30 +4,30 @@ import '../../models/operario.dart';
 import '../../models/service_order.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_title.dart';
-import '../../widgets/service_card.dart';
+import '../../widgets/card_servicos.dart';
 import '../shared/notifications_screen.dart';
-import 'my_services_screen.dart';
-import 'service_detail_screen.dart';
+import 'operario_tela_servicos.dart';
+import 'operario_tela_de_detalhes_do_servico.dart';
 
 /// Tela inicial do operário (ÉPICO 04): exibe apenas os serviços
 /// dentro do raio de deslocamento cadastrado (US04.1) e sinaliza,
 /// sem esconder por completo, os serviços fora do nível de
 /// experiência exigido (US04.2 adaptado para fins de transparência
 /// no protótipo — cards aparecem bloqueados com o motivo).
-class OperarioHomeScreen extends StatefulWidget {
-  const OperarioHomeScreen({super.key});
+class OperarioTelaHome extends StatefulWidget {
+  const OperarioTelaHome({super.key});
 
   @override
-  State<OperarioHomeScreen> createState() => _OperarioHomeScreenState();
+  State<OperarioTelaHome> createState() => _OperarioTelaHomeState();
 }
 
-class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
-  ServiceScope? _filtroEscopo;
+class _OperarioTelaHomeState extends State<OperarioTelaHome> {
+  EscopoServico? _filtroEscopo;
 
   @override
   Widget build(BuildContext context) {
     final operario = mockOperarioAtual;
-    final servicos = mockServiceOrders.where((s) {
+    final servicos = mockOrdensServico.where((s) {
       if (_filtroEscopo == null) return true;
       return s.escopo == _filtroEscopo;
     }).toList();
@@ -43,15 +43,15 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
             _buildScopeFilter(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-              child: SectionTitle(
-                title: 'Serviços no seu raio (${operario.raioAtendimentoKm.toStringAsFixed(0)} km)',
+              child: TituloSecao(
+                titulo: 'Serviços no seu raio (${operario.raioAtendimentoKm.toStringAsFixed(0)} km)',
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: servicos.map((s) {
-                  final apto = s.operarioEstaApto(
+                  final estaApto = s.operarioEstaApto(
                     operario.raioAtendimentoKm,
                     operario.servicosRealizados,
                   );
@@ -59,19 +59,19 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
                   String? motivo;
                   if (!dentroDoRaio) {
                     motivo = 'Fora do seu raio de atendimento';
-                  } else if (!apto) {
+                  } else if (!estaApto) {
                     motivo =
-                        'Requer nível ${s.complexidade.nivelMinimoExigido.label}';
+                        'Requer nível ${s.complexidade.nivelMinimoExigido.texto}';
                   }
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: ServiceCard(
-                      service: s,
-                      locked: !apto,
+                    child: CardServicos(
+                      servico: s,
+                      locked: !estaApto,
                       lockedReason: motivo,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => ServiceDetailScreen(service: s),
+                          builder: (_) => OperarioTelaDeDetalhesDoServico(servico: s),
                         ),
                       ),
                     ),
@@ -85,12 +85,12 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, OperarioProfile operario) {
+  Widget _buildHeader(BuildContext context, PerfilOperario operario) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
       decoration: const BoxDecoration(
-        color: AppColors.azulConfianca,
+        color: CoresApp.azulConfianca,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -112,7 +112,7 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
                   Text(
                     operario.nome.split(' ').first,
                     style: const TextStyle(
-                      color: AppColors.branco,
+                      color: CoresApp.branco,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -122,20 +122,20 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
               GestureDetector(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => const NotificationsScreen(isInstituicao: false),
+                    builder: (_) => const TelaNotificacoes(ehInstituicao: false),
                   ),
                 ),
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Icon(Icons.notifications_none_rounded, color: AppColors.branco),
+                    const Icon(Icons.notifications_none_rounded, color: CoresApp.branco),
                     Positioned(
                       right: -4,
                       top: -4,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
-                          color: AppColors.amareloSolidario,
+                          color: CoresApp.amareloSolidario,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -143,7 +143,7 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.amareloEscuro,
+                            color: CoresApp.amareloEscuro,
                           ),
                         ),
                       ),
@@ -168,7 +168,7 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
           const TextField(
             decoration: InputDecoration(
               hintText: 'Buscar serviço solidário',
-              prefixIcon: Icon(Icons.search, color: AppColors.textoSecundario),
+              prefixIcon: Icon(Icons.search, color: CoresApp.textoSecundario),
             ),
           ),
         ],
@@ -182,12 +182,12 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.amareloSolidario,
+          color: CoresApp.amareloSolidario,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            const Icon(Icons.workspace_premium_rounded, color: AppColors.amareloEscuro, size: 26),
+            const Icon(Icons.workspace_premium_rounded, color: CoresApp.amareloEscuro, size: 26),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -198,7 +198,7 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.amareloEscuro,
+                      color: CoresApp.amareloEscuro,
                     ),
                   ),
                   Text(
@@ -222,13 +222,13 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MyServicesScreen()),
+                MaterialPageRoute(builder: (_) => const OperarioTelaServicos()),
               ),
               icon: const Icon(Icons.assignment_outlined, size: 18),
               label: const Text('Meus Serviços', style: TextStyle(fontSize: 12)),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.azulConfianca,
-                side: const BorderSide(color: AppColors.azulConfianca),
+                foregroundColor: CoresApp.azulConfianca,
+                side: const BorderSide(color: CoresApp.azulConfianca),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
@@ -244,23 +244,23 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(title: 'Filtrar por escopo'),
+          const TituloSecao(titulo: 'Filtrar por escopo'),
           const SizedBox(height: 10),
           SizedBox(
             height: 36,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: ServiceScope.values.length + 1,
+              itemCount: EscopoServico.values.length + 1,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 if (index == 0) {
                   final selected = _filtroEscopo == null;
                   return _chip('Todos', selected, () => setState(() => _filtroEscopo = null));
                 }
-                final escopo = ServiceScope.values[index - 1];
+                final escopo = EscopoServico.values[index - 1];
                 final selected = _filtroEscopo == escopo;
                 return _chip(
-                  escopo.label,
+                  escopo.texto,
                   selected,
                   () => setState(() => _filtroEscopo = selected ? null : escopo),
                 );
@@ -277,11 +277,11 @@ class _OperarioHomeScreenState extends State<OperarioHomeScreen> {
       label: Text(label, style: const TextStyle(fontSize: 11)),
       selected: selected,
       onSelected: (_) => onTap(),
-      selectedColor: AppColors.vermelhoAcao,
-      backgroundColor: AppColors.branco,
-      labelStyle: TextStyle(color: selected ? AppColors.branco : AppColors.azulConfianca),
+      selectedColor: CoresApp.vermelhoAcao,
+      backgroundColor: CoresApp.branco,
+      labelStyle: TextStyle(color: selected ? CoresApp.branco : CoresApp.azulConfianca),
       shape: StadiumBorder(
-        side: BorderSide(color: selected ? AppColors.vermelhoAcao : AppColors.azulConfianca),
+        side: BorderSide(color: selected ? CoresApp.vermelhoAcao : CoresApp.azulConfianca),
       ),
     );
   }

@@ -3,22 +3,22 @@ import '../../models/instituicao.dart';
 import '../../models/service_order.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_title.dart';
-import '../../widgets/service_card.dart';
+import '../../widgets/card_servicos.dart';
 import '../shared/notifications_screen.dart';
-import 'new_service_screen.dart';
+import 'instituicao_tela_novo_servico.dart';
 
 /// Tela inicial da instituição (ÉPICO 02 - US02.2): botão de ação
 /// flutuante para criar um 'Novo Serviço' e visão geral dos serviços
 /// publicados.
-class InstitutionHomeScreen extends StatefulWidget {
-  const InstitutionHomeScreen({super.key});
+class InstituicaoTelaHome extends StatefulWidget {
+  const InstituicaoTelaHome({super.key});
 
   @override
-  State<InstitutionHomeScreen> createState() => _InstitutionHomeScreenState();
+  State<InstituicaoTelaHome> createState() => _InstituicaoTelaHomeState();
 }
 
-class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
-  final List<ServiceOrder> _publicados = List.of(mockServiceOrders.take(3));
+class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
+  final List<OrdemServico> _publicados = List.of(mockOrdensServico.take(3));
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
             _buildStats(instituicao),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-              child: SectionTitle(title: 'Seus serviços publicados'),
+              child: TituloSecao(titulo: 'Seus serviços publicados'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -40,7 +40,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
                 children: _publicados
                     .map((s) => Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: ServiceCard(service: s),
+                          child: CardServicos(servico: s),
                         ))
                     .toList(),
               ),
@@ -50,27 +50,27 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final novo = await Navigator.of(context).push<ServiceOrder>(
-            MaterialPageRoute(builder: (_) => const NewServiceScreen()),
+          final novo = await Navigator.of(context).push<OrdemServico>(
+            MaterialPageRoute(builder: (_) => const InstituicaoTelaNovoServico()),
           );
           if (novo != null) {
             setState(() => _publicados.insert(0, novo));
           }
         },
-        backgroundColor: AppColors.vermelhoAcao,
-        foregroundColor: AppColors.branco,
+        backgroundColor: CoresApp.vermelhoAcao,
+        foregroundColor: CoresApp.branco,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Novo Serviço'),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, InstituicaoProfile instituicao) {
+  Widget _buildHeader(BuildContext context, PerfilInstituicao instituicao) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
       decoration: const BoxDecoration(
-        color: AppColors.azulConfianca,
+        color: CoresApp.azulConfianca,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -93,7 +93,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: AppColors.branco,
+                        color: CoresApp.branco,
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                       ),
@@ -104,10 +104,10 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
               GestureDetector(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => const NotificationsScreen(isInstituicao: true),
+                    builder: (_) => const TelaNotificacoes(ehInstituicao: true),
                   ),
                 ),
-                child: const Icon(Icons.notifications_none_rounded, color: AppColors.branco),
+                child: const Icon(Icons.notifications_none_rounded, color: CoresApp.branco),
               ),
             ],
           ),
@@ -127,7 +127,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
     );
   }
 
-  Widget _buildStats(InstituicaoProfile instituicao) {
+  Widget _buildStats(PerfilInstituicao instituicao) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(
@@ -135,20 +135,20 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
           Expanded(
             child: _statCard(
               icon: Icons.assignment_turned_in_outlined,
-              label: 'Serviços publicados',
+              texto: 'Serviços publicados',
               value: '${instituicao.servicosPublicados}',
-              color: AppColors.azulClaro,
-              background: AppColors.azulFundo,
+              color: CoresApp.azulClaro,
+              background: CoresApp.azulFundo,
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: _statCard(
               icon: Icons.volunteer_activism_rounded,
-              label: 'Doado à plataforma',
+              texto: 'Doado à plataforma',
               value: 'R\$ ${instituicao.totalDoado.toStringAsFixed(0)}',
-              color: AppColors.amareloEscuro,
-              background: AppColors.amareloFundo,
+              color: CoresApp.amareloEscuro,
+              background: CoresApp.amareloFundo,
             ),
           ),
         ],
@@ -158,7 +158,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
 
   Widget _statCard({
     required IconData icon,
-    required String label,
+    required String texto,
     required String value,
     required Color color,
     required Color background,
@@ -166,9 +166,9 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.branco,
+        color: CoresApp.branco,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borda),
+        border: Border.all(color: CoresApp.borda),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,8 +180,8 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(value,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textoPrimario)),
-          Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textoSecundario)),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: CoresApp.textoPrimario)),
+          Text(texto, style: const TextStyle(fontSize: 10, color: CoresApp.textoSecundario)),
         ],
       ),
     );

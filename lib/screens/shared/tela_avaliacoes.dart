@@ -25,19 +25,22 @@ const List<_Review> _reviewsInstituicao = [
 /// Tela "Avaliar Serviços", presente no menu inferior de ambos os
 /// perfis (ÉPICO 02 - US02.1): mostra a reputação recebida e permite
 /// avaliar a outra ponta após a conclusão de um serviço.
-class RatingsScreen extends StatelessWidget {
-  final bool isInstituicao;
+class TelaAvaliacoes extends StatelessWidget {
+  final bool ehInstituicao;
 
-  const RatingsScreen({super.key, required this.isInstituicao});
+  const TelaAvaliacoes({super.key, required this.ehInstituicao});
 
   @override
   Widget build(BuildContext context) {
-    final reviews = isInstituicao ? _reviewsInstituicao : _reviewsOperario;
-    final media = isInstituicao ? 4.6 : mockOperarioAtual.avaliacaoMedia;
-    final nomeExibicao = isInstituicao ? mockInstituicaoAtual.nome : mockOperarioAtual.nome;
+    final reviews = ehInstituicao ? _reviewsInstituicao : _reviewsOperario;
+    final media = ehInstituicao ? 4.6 : mockOperarioAtual.avaliacaoMedia;
+    final nomeExibicao = ehInstituicao ? mockInstituicaoAtual.nome : mockOperarioAtual.nome;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Avaliar Serviços')),
+      appBar: AppBar(
+          title: const Text('Avaliar Serviços'),
+          automaticallyImplyLeading: false, //desativar a seta de voltar da topbar
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -45,18 +48,18 @@ class RatingsScreen extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: AppColors.branco,
+              color: CoresApp.branco,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.borda),
+              border: Border.all(color: CoresApp.borda),
             ),
             child: Column(
               children: [
                 Text(nomeExibicao,
-                    style: const TextStyle(fontSize: 13, color: AppColors.textoSecundario)),
+                    style: const TextStyle(fontSize: 13, color: CoresApp.textoSecundario)),
                 const SizedBox(height: 6),
                 Text(
                   media.toStringAsFixed(1),
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: AppColors.textoPrimario),
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: CoresApp.textoPrimario),
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -65,28 +68,28 @@ class RatingsScreen extends StatelessWidget {
                     final filled = i < media.round();
                     return Icon(
                       filled ? Icons.star_rounded : Icons.star_border_rounded,
-                      color: AppColors.amareloSolidario,
+                      color: CoresApp.amareloSolidario,
                       size: 20,
                     );
                   }),
                 ),
                 const SizedBox(height: 4),
                 Text('${reviews.length} avaliações recebidas',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textoSecundario)),
+                    style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          const SectionTitle(title: 'Avaliações recebidas'),
+          const TituloSecao(titulo: 'Avaliações recebidas'),
           const SizedBox(height: 10),
           ...reviews.map((r) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.branco,
+                    color: CoresApp.branco,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borda),
+                    border: Border.all(color: CoresApp.borda),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +105,7 @@ class RatingsScreen extends StatelessWidget {
                               (i) => Icon(
                                 i < r.estrelas ? Icons.star_rounded : Icons.star_border_rounded,
                                 size: 14,
-                                color: AppColors.amareloSolidario,
+                                color: CoresApp.amareloSolidario,
                               ),
                             ),
                           ),
@@ -110,7 +113,7 @@ class RatingsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(r.comentario,
-                          style: const TextStyle(fontSize: 12, color: AppColors.textoSecundario, height: 1.4)),
+                          style: const TextStyle(fontSize: 12, color: CoresApp.textoSecundario, height: 1.4)),
                     ],
                   ),
                 ),

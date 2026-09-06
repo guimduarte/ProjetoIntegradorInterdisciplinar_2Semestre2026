@@ -22,9 +22,9 @@ class CardProfissional extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.branco,
+        color: CoresApp.branco,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borda),
+        border: Border.all(color: CoresApp.borda),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,11 +33,11 @@ class CardProfissional extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: AppColors.azulFundo,
+                backgroundColor: CoresApp.azulFundo,
                 child: Text(
                   profissional.iniciais,
                   style: const TextStyle(
-                    color: AppColors.azulClaro,
+                    color: CoresApp.azulClaro,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -53,7 +53,7 @@ class CardProfissional extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textoPrimario,
+                        color: CoresApp.textoPrimario,
                       ),
                     ),
                     Text(
@@ -62,7 +62,7 @@ class CardProfissional extends StatelessWidget {
                           : '${profissional.especialidade} · ${profissional.distanciaKm.toStringAsFixed(1)} km',
                       style: const TextStyle(
                         fontSize: 11,
-                        color: AppColors.textoSecundario,
+                        color: CoresApp.textoSecundario,
                       ),
                     ),
                   ],
@@ -71,7 +71,7 @@ class CardProfissional extends StatelessWidget {
               Row(
                 children: [
                   const Icon(Icons.star_rounded,
-                      color: AppColors.amareloSolidario, size: 16),
+                      color: CoresApp.amareloSolidario, size: 16),
                   const SizedBox(width: 2),
                   Text(
                     profissional.avaliacao.toStringAsFixed(1),
@@ -86,14 +86,14 @@ class CardProfissional extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (profissional.isNgoVerified) _buildBadge(
-                  label: 'Selo ONG verificado',
-                  background: AppColors.azulFundo,
-                  foreground: AppColors.azulClaro,
-                ) else if (profissional.isVolunteerService) _buildBadge(
-                  label: 'Serviço solidário',
-                  background: AppColors.amareloFundo,
-                  foreground: AppColors.amareloEscuro,
+                if (profissional.ongEstaVerificada) _buildBadge(
+                  texto: 'Selo ONG verificado',
+                  background: CoresApp.azulFundo,
+                  foreground: CoresApp.azulClaro,
+                ) else if (profissional.ehServicoVoluntario) _buildBadge(
+                  texto: 'Serviço solidário',
+                  background: CoresApp.amareloFundo,
+                  foreground: CoresApp.amareloEscuro,
                 ) else const SizedBox.shrink(),
                 ElevatedButton(
                   onPressed: onRequest,
@@ -114,7 +114,7 @@ class CardProfissional extends StatelessWidget {
   }
 
   Widget _buildBadge({
-    required String label,
+    required String texto,
     required Color background,
     required Color foreground,
   }) {
@@ -125,7 +125,7 @@ class CardProfissional extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        label,
+        texto,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,

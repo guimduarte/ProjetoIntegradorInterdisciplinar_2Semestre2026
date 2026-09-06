@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
-import '../../models/service_application.dart';
+import '../../models/modelo_aplicacao_de_servico.dart';
 import '../../theme/app_theme.dart';
 
 /// Tela "Notificações", presente no menu inferior de ambos os
 /// perfis (ÉPICO 02 - US02.1). Exibe alertas de novos serviços no
 /// raio (US04.1), decisões de candidatura e créditos de pontos.
-class NotificationsScreen extends StatelessWidget {
-  final bool isInstituicao;
+class TelaNotificacoes extends StatelessWidget {
+  final bool ehInstituicao;
 
-  const NotificationsScreen({super.key, required this.isInstituicao});
+  const TelaNotificacoes({super.key, required this.ehInstituicao});
 
   @override
   Widget build(BuildContext context) {
-    final notificacoes = isInstituicao ? mockNotificacoesInstituicao : mockNotificacoesOperario;
+    final notificacoes = ehInstituicao ? mockNotificacoesInstituicao : mockNotificacoesOperario;
     return Scaffold(
       appBar: AppBar(title: const Text('Notificações')),
       body: notificacoes.isEmpty
           ? const Center(
               child: Text('Nenhuma notificação por enquanto.',
-                  style: TextStyle(color: AppColors.textoSecundario, fontSize: 13)),
+                  style: TextStyle(color: CoresApp.textoSecundario, fontSize: 13)),
             )
           : ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -29,9 +29,9 @@ class NotificationsScreen extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: n.lida ? AppColors.branco : AppColors.azulFundo,
+                    color: n.lida ? CoresApp.branco : CoresApp.azulFundo,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borda),
+                    border: Border.all(color: CoresApp.borda),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,13 +39,13 @@ class NotificationsScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: const BoxDecoration(
-                          color: AppColors.branco,
+                          color: CoresApp.branco,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           n.lida ? Icons.notifications_none_rounded : Icons.notifications_active_rounded,
                           size: 18,
-                          color: n.lida ? AppColors.textoSecundario : AppColors.vermelhoAcao,
+                          color: n.lida ? CoresApp.textoSecundario : CoresApp.vermelhoAcao,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -57,10 +57,10 @@ class NotificationsScreen extends StatelessWidget {
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                             const SizedBox(height: 3),
                             Text(n.mensagem,
-                                style: const TextStyle(fontSize: 12, color: AppColors.textoSecundario, height: 1.3)),
+                                style: const TextStyle(fontSize: 12, color: CoresApp.textoSecundario, height: 1.3)),
                             const SizedBox(height: 6),
                             Text(n.tempo,
-                                style: const TextStyle(fontSize: 10, color: AppColors.textoSecundario)),
+                                style: const TextStyle(fontSize: 10, color: CoresApp.textoSecundario)),
                           ],
                         ),
                       ),

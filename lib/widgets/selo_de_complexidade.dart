@@ -4,13 +4,13 @@ import '../models/service_order.dart';
 /// Selo colorido que indica o nível de complexidade de um serviço e,
 /// opcionalmente, a taxa de pontos por hora correspondente (US03.1 e
 /// US05.1).
-class ComplexityBadge extends StatelessWidget {
-  final ServiceComplexity complexity;
+class SeloDeComplexidade extends StatelessWidget {
+  final ComplexidadeServico complexidade;
   final bool showPoints;
 
-  const ComplexityBadge({
+  const SeloDeComplexidade({
     super.key,
-    required this.complexity,
+    required this.complexidade,
     this.showPoints = false,
   });
 
@@ -19,17 +19,17 @@ class ComplexityBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: complexity.background,
+        color: complexidade.background,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         showPoints
-            ? '${complexity.label} · ${complexity.pontosPorHora.toStringAsFixed(1)} pts/h'
-            : complexity.label,
+            ? '${complexidade.texto} · ${complexidade.pontosPorHora.toStringAsFixed(1)} pts/h'
+            : complexidade.texto,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: complexity.color,
+          color: complexidade.cor,
         ),
       ),
     );

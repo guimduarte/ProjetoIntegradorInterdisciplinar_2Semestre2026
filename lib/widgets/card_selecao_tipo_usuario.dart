@@ -25,7 +25,7 @@ class CardSelecaoTipoUsuario extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.branco,
+      color: CoresApp.branco,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -34,7 +34,7 @@ class CardSelecaoTipoUsuario extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borda),
+            border: Border.all(color: CoresApp.borda),
           ),
           child: Row(
             children: [
@@ -57,7 +57,7 @@ class CardSelecaoTipoUsuario extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textoPrimario,
+                        color: CoresApp.textoPrimario,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -65,7 +65,7 @@ class CardSelecaoTipoUsuario extends StatelessWidget {
                       subtitle,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.textoSecundario,
+                        color: CoresApp.textoSecundario,
                         height: 1.3,
                       ),
                     ),
@@ -74,7 +74,7 @@ class CardSelecaoTipoUsuario extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: AppColors.textoSecundario),
+                  size: 14, color: CoresApp.textoSecundario),
             ],
           ),
         ),

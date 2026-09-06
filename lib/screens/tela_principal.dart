@@ -36,7 +36,7 @@ class TelaPrincipal extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
       decoration: const BoxDecoration(
-        color: AppColors.azulConfianca,
+        color: CoresApp.azulConfianca,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -48,11 +48,11 @@ class TelaPrincipal extends StatelessWidget {
           Row( // ROW DO TOPO (BOTÃO MENU LATERAL, TÍTULO DO APP E BOTÃO NOTIFICAÇÕES)
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.menu_rounded, color: AppColors.branco),
+              const Icon(Icons.menu_rounded, color: CoresApp.branco),
               const Text(
                 'Mãos Solidárias',
                 style: TextStyle(
-                  color: AppColors.branco,
+                  color: CoresApp.branco,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -61,7 +61,7 @@ class TelaPrincipal extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   const Icon(Icons.notifications_none_rounded,
-                      color: AppColors.branco),
+                      color: CoresApp.branco),
                   Positioned(
                     right: -4,
                     top: -4,
@@ -71,7 +71,7 @@ class TelaPrincipal extends StatelessWidget {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.amareloSolidario,
+                        color: CoresApp.amareloSolidario,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -79,7 +79,7 @@ class TelaPrincipal extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.amareloEscuro,
+                          color: CoresApp.amareloEscuro,
                         ),
                       ),
                     ),
@@ -104,7 +104,7 @@ class TelaPrincipal extends StatelessWidget {
           TextField(
             decoration: InputDecoration(
               hintText: 'Buscar serviço ou profissional',
-              prefixIcon: const Icon(Icons.search, color: AppColors.textoSecundario),
+              prefixIcon: const Icon(Icons.search, color: CoresApp.textoSecundario),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,
@@ -122,13 +122,13 @@ class TelaPrincipal extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.amareloSolidario,
+          color: CoresApp.amareloSolidario,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Row(
           children: [
             Icon(Icons.volunteer_activism_rounded,
-                color: AppColors.amareloEscuro, size: 26),
+                color: CoresApp.amareloEscuro, size: 26),
             SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -139,7 +139,7 @@ class TelaPrincipal extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.amareloEscuro,
+                      color: CoresApp.amareloEscuro,
                     ),
                   ),
                   Text(
@@ -166,19 +166,19 @@ class TelaPrincipal extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppColors.textoPrimario,
+              color: CoresApp.textoPrimario,
             ),
           ),
           const SizedBox(height: 12),
           LayoutBuilder( //Esse LayoutBuilder envolve a row que contém os ícones coloridos, para que eles reduzam de tamanho caso não haja espaço o suficiente.
             builder: (context, constraints) {
               final categorias = [
-                (Icons.construction_rounded, 'Pedreiro', AppColors.vermelhoFundo, AppColors.vermelhoEscuro),
-                (Icons.carpenter_rounded, 'Carpinteiro', AppColors.azulFundo, AppColors.azulClaro),
-                (Icons.format_paint_rounded, 'Pintor', AppColors.amareloFundo, AppColors.amareloEscuro),
-                (Icons.bolt_rounded, 'Eletricista', AppColors.vermelhoFundo, AppColors.vermelhoEscuro),
-                (Icons.build_rounded, 'Técnico', AppColors.azulFundo, AppColors.azulClaro),
-                (Icons.plumbing_rounded, 'Encanador', AppColors.amareloFundo, AppColors.amareloEscuro),
+                (Icons.construction_rounded, 'Pedreiro', CoresApp.vermelhoFundo, CoresApp.vermelhoEscuro),
+                (Icons.carpenter_rounded, 'Carpinteiro', CoresApp.azulFundo, CoresApp.azulClaro),
+                (Icons.format_paint_rounded, 'Pintor', CoresApp.amareloFundo, CoresApp.amareloEscuro),
+                (Icons.bolt_rounded, 'Eletricista', CoresApp.vermelhoFundo, CoresApp.vermelhoEscuro),
+                (Icons.build_rounded, 'Técnico', CoresApp.azulFundo, CoresApp.azulClaro),
+                (Icons.plumbing_rounded, 'Encanador', CoresApp.amareloFundo, CoresApp.amareloEscuro),
               ];
 
               const double larguraIdealPorItem = 64; // 52 do círculo + folga
@@ -189,14 +189,14 @@ class TelaPrincipal extends StatelessWidget {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: categorias.map((c) {
-                  final (icon, label, bg, iconColor) = c;
+                  final (icon, texto, bg, iconColor) = c;
                   return ItemCategoria(
                     icon: icon,
-                    label: label,
+                    texto: texto,
                     background: bg,
                     iconColor: iconColor,
                     scale: scale,
-                    onTap: () => _navegarTelaServicos(context, label),
+                    onTap: () => _navegarTelaServicos(context, texto),
                   );
                 }).toList(),
               );
@@ -218,11 +218,11 @@ class TelaPrincipal extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppColors.textoPrimario,
+              color: CoresApp.textoPrimario,
             ),
           ),
           const SizedBox(height: 12),
-          ...mockProfessionals.take(2).map(
+          ...mockProfissionais.take(2).map(
                 (p) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: CardProfissional(profissional: p, compact: true),
@@ -239,7 +239,7 @@ class TelaPrincipal extends StatelessWidget {
       onTap: (index) {
         if (index == 1) {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ServicesScreen()),
+            MaterialPageRoute(builder: (_) => const TelaServicosDisponiveis()),
           );
         }
       },
@@ -264,10 +264,10 @@ class TelaPrincipal extends StatelessWidget {
     );
   }
 
-  void _navegarTelaServicos(BuildContext context, String category) {
+  void _navegarTelaServicos(BuildContext context, String categoria) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ServicesScreen(initialCategory: category),
+        builder: (_) => TelaServicosDisponiveis(categoriaInicial: categoria),
       ),
     );
   }

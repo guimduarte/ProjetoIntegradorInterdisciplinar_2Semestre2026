@@ -3,24 +3,24 @@ import '../../models/experience_level.dart';
 import '../../models/instituicao.dart';
 import '../../models/service_order.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/complexity_badge.dart';
+import '../../widgets/selo_de_complexidade.dart';
 
 /// Publicação de novo serviço pela instituição (ÉPICO 03 - US03.1):
 /// título, escopo, descrição e classificação automática de
 /// complexidade a partir do escopo selecionado. Os dados cadastrais
 /// da instituição são incluídos automaticamente ao publicar.
-class NewServiceScreen extends StatefulWidget {
-  const NewServiceScreen({super.key});
+class InstituicaoTelaNovoServico extends StatefulWidget {
+  const InstituicaoTelaNovoServico({super.key});
 
   @override
-  State<NewServiceScreen> createState() => _NewServiceScreenState();
+  State<InstituicaoTelaNovoServico> createState() => _InstituicaoTelaNovoServicoState();
 }
 
-class _NewServiceScreenState extends State<NewServiceScreen> {
+class _InstituicaoTelaNovoServicoState extends State<InstituicaoTelaNovoServico> {
   final _tituloController = TextEditingController();
   final _descricaoController = TextEditingController();
   final _horasController = TextEditingController(text: '4');
-  ServiceScope _escopo = ServiceScope.manutencaoBasica;
+  EscopoServico _escopo = EscopoServico.manutencaoBasica;
   bool _marcarAvancado = false;
 
   @override
@@ -31,9 +31,9 @@ class _NewServiceScreenState extends State<NewServiceScreen> {
     super.dispose();
   }
 
-  ServiceComplexity get _complexidadeAtual =>
+  ComplexidadeServico get _complexidadeAtual =>
       (_marcarAvancado && _escopo.permiteMarcarAvancado)
-          ? ServiceComplexity.avancado
+          ? ComplexidadeServico.avancado
           : _escopo.complexidadeBase;
 
   @override
@@ -57,22 +57,22 @@ class _NewServiceScreenState extends State<NewServiceScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: AppColors.branco,
+                color: CoresApp.branco,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: DropdownButtonHideUnderline(
-                child: DropdownButton<ServiceScope>(
+                child: DropdownButton<EscopoServico>(
                   value: _escopo,
                   isExpanded: true,
                   padding: const EdgeInsets.symmetric(horizontal: 10),
-                  items: ServiceScope.values
+                  items: EscopoServico.values
                       .map((e) => DropdownMenuItem(
                             value: e,
                             child: Row(
                               children: [
-                                Icon(e.icon, size: 16, color: AppColors.azulClaro),
+                                Icon(e.icone, size: 16, color: CoresApp.azulClaro),
                                 const SizedBox(width: 8),
-                                Text(e.label, style: const TextStyle(fontSize: 13)),
+                                Text(e.texto, style: const TextStyle(fontSize: 13)),
                               ],
                             ),
                           ))
@@ -109,16 +109,16 @@ class _NewServiceScreenState extends State<NewServiceScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.fundoTela,
+                color: CoresApp.fundoTela,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borda),
+                border: Border.all(color: CoresApp.borda),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.azulClaro),
+                      Icon(Icons.auto_awesome_rounded, size: 16, color: CoresApp.azulClaro),
                       SizedBox(width: 6),
                       Text('Complexidade calculada automaticamente',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
@@ -127,12 +127,12 @@ class _NewServiceScreenState extends State<NewServiceScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      ComplexityBadge(complexity: _complexidadeAtual, showPoints: true),
+                      SeloDeComplexidade(complexidade: _complexidadeAtual, showPoints: true),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Requer operário de nível ${_complexidadeAtual.nivelMinimoExigido.label}',
-                          style: const TextStyle(fontSize: 11, color: AppColors.textoSecundario),
+                          'Requer operário de nível ${_complexidadeAtual.nivelMinimoExigido.texto}',
+                          style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario),
                         ),
                       ),
                     ],
@@ -175,7 +175,7 @@ class _NewServiceScreenState extends State<NewServiceScreen> {
       return;
     }
     final instituicao = mockInstituicaoAtual;
-    final novo = ServiceOrder(
+    final novo = OrdemServico(
       id: 'novo-${DateTime.now().millisecondsSinceEpoch}',
       titulo: _tituloController.text.trim(),
       descricao: _descricaoController.text.trim().isEmpty

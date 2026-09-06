@@ -22,7 +22,7 @@ class MaosSolidariasApp extends StatelessWidget {
     return MaterialApp(
       title: 'Mãos Solidárias',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: TemaApp.temaClaro,
       home: const TelaSelecaoTipoUsuario(),
     );
   }

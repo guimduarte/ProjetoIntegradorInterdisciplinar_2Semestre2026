@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../models/service_order.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/complexity_badge.dart';
+import '../../widgets/selo_de_complexidade.dart';
 
 /// Aba "Meus Serviços" do operário, separando chamados 'Aceitos'
 /// (em andamento) de 'Realizados' (com horas gastas e pontos
 /// angariados) — US05.2.
-class MyServicesScreen extends StatelessWidget {
-  const MyServicesScreen({super.key});
+class OperarioTelaServicos extends StatelessWidget {
+  const OperarioTelaServicos({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,14 +16,15 @@ class MyServicesScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Meus Serviços'),
+          automaticallyImplyLeading: false, //desativar a seta de voltar da topbar
           bottom: const TabBar(
             tabs: [Tab(text: 'Aceitos'), Tab(text: 'Realizados')],
           ),
         ),
         body: TabBarView(
           children: [
-            _ServicesList(services: mockServicosAceitos, showResultado: false),
-            _ServicesList(services: mockServicosRealizados, showResultado: true),
+            _ListaDeServicos(servicos: mockServicosAceitos, showResultado: false),
+            _ListaDeServicos(servicos: mockServicosRealizados, showResultado: true),
           ],
         ),
       ),
@@ -31,34 +32,34 @@ class MyServicesScreen extends StatelessWidget {
   }
 }
 
-class _ServicesList extends StatelessWidget {
-  final List<ServiceOrder> services;
+class _ListaDeServicos extends StatelessWidget {
+  final List<OrdemServico> servicos;
   final bool showResultado;
 
-  const _ServicesList({required this.services, required this.showResultado});
+  const _ListaDeServicos({required this.servicos, required this.showResultado});
 
   @override
   Widget build(BuildContext context) {
-    if (services.isEmpty) {
+    if (servicos.isEmpty) {
       return Center(
         child: Text(
           showResultado ? 'Nenhum serviço realizado ainda.' : 'Nenhum serviço em andamento.',
-          style: const TextStyle(color: AppColors.textoSecundario, fontSize: 13),
+          style: const TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
         ),
       );
     }
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: services.length,
+      itemCount: servicos.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final s = services[index];
+        final s = servicos[index];
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.branco,
+            color: CoresApp.branco,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borda),
+            border: Border.all(color: CoresApp.borda),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,21 +72,21 @@ class _ServicesList extends StatelessWidget {
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                   ),
-                  ComplexityBadge(complexity: s.complexidade),
+                  SeloDeComplexidade(complexidade: s.complexidade),
                 ],
               ),
               const SizedBox(height: 4),
               Text(s.instituicaoNome,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textoSecundario)),
+                  style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
               const SizedBox(height: 10),
               if (showResultado) ...[
                 Row(
                   children: [
-                    _statPill(Icons.schedule_rounded,
+                    _textinhoStatus(Icons.schedule_rounded,
                         '${s.horasRealizadas?.toStringAsFixed(1) ?? '-'} h trabalhadas'),
                     const SizedBox(width: 8),
-                    _statPill(Icons.toll_rounded, '+${s.pontosGanhos ?? 0} pts',
-                        color: AppColors.amareloEscuro),
+                    _textinhoStatus(Icons.toll_rounded, '+${s.pontosGanhos ?? 0} pts',
+                        cor: CoresApp.amareloEscuro),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -96,8 +97,8 @@ class _ServicesList extends StatelessWidget {
                     icon: const Icon(Icons.star_border_rounded, size: 16),
                     label: const Text('Avaliar instituição', style: TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.amareloEscuro,
-                      side: const BorderSide(color: AppColors.amareloSolidario),
+                      foregroundColor: CoresApp.amareloEscuro,
+                      side: const BorderSide(color: CoresApp.amareloSolidario),
                     ),
                   ),
                 ),
@@ -105,12 +106,12 @@ class _ServicesList extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.amareloFundo,
+                    color: CoresApp.amareloFundo,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
                     'Em andamento',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.amareloEscuro),
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: CoresApp.amareloEscuro),
                   ),
                 ),
             ],
@@ -120,26 +121,33 @@ class _ServicesList extends StatelessWidget {
     );
   }
 
-  Widget _statPill(IconData icon, String label, {Color? color}) {
-    final c = color ?? AppColors.textoSecundario;
+  Widget _textinhoStatus(
+      IconData icone,
+      String texto,
+      {Color? cor}
+  ) {
+    final c = cor ?? CoresApp.textoSecundario;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.fundoTela,
+        color: CoresApp.fundoTela,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: c),
+          Icon(icone, size: 12, color: c),
           const SizedBox(width: 3),
-          Text(label, style: TextStyle(fontSize: 11, color: c, fontWeight: FontWeight.w600)),
+          Text(
+              texto,
+              style: TextStyle(fontSize: 11, color: c, fontWeight: FontWeight.w600)
+          ),
         ],
       ),
     );
   }
 
-  void _avaliarServico(BuildContext context, ServiceOrder s) {
+  void _avaliarServico(BuildContext context, OrdemServico s) {
     int estrelas = 5;
     showModalBottomSheet(
       context: context,
@@ -164,7 +172,7 @@ class _ServicesList extends StatelessWidget {
                     onPressed: () => setModalState(() => estrelas = i + 1),
                     icon: Icon(
                       filled ? Icons.star_rounded : Icons.star_border_rounded,
-                      color: AppColors.amareloSolidario,
+                      color: CoresApp.amareloSolidario,
                       size: 32,
                     ),
                   );

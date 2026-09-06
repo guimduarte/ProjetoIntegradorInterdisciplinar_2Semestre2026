@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 /// - Vermelho ação: botões primários e chamadas para ação.
 /// - Amarelo solidário: destaques, avaliações e selos de impacto social.
 /// - Branco: fundo e superfícies de conteúdo.
-class AppColors {
-  AppColors._();
+class CoresApp {
+  CoresApp._();
 
   static const Color azulConfianca = Color(0xFF14213D);
   static const Color azulClaro = Color(0xFF0C447C);
@@ -42,41 +42,41 @@ class AppColors {
   static const Color bloqueadoFundo = Color(0xFFF0F1F3);
 }
 
-class AppTheme {
-  AppTheme._();
+class TemaApp {
+  TemaApp._();
 
-  static ThemeData get lightTheme {
+  static ThemeData get temaClaro {
     final base = ThemeData.light(useMaterial3: true);
 
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.fundoTela,
+      scaffoldBackgroundColor: CoresApp.fundoTela,
       colorScheme: base.colorScheme.copyWith(
-        primary: AppColors.vermelhoAcao,
-        secondary: AppColors.azulConfianca,
-        tertiary: AppColors.amareloSolidario,
-        surface: AppColors.branco,
-        error: AppColors.vermelhoEscuro,
+        primary: CoresApp.vermelhoAcao,
+        secondary: CoresApp.azulConfianca,
+        tertiary: CoresApp.amareloSolidario,
+        surface: CoresApp.branco,
+        error: CoresApp.vermelhoEscuro,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.azulConfianca,
-        foregroundColor: AppColors.branco,
+        backgroundColor: CoresApp.azulConfianca,
+        foregroundColor: CoresApp.branco,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          color: AppColors.branco,
+          color: CoresApp.branco,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
       ),
       textTheme: base.textTheme.apply(
-        bodyColor: AppColors.textoPrimario,
-        displayColor: AppColors.textoPrimario,
+        bodyColor: CoresApp.textoPrimario,
+        displayColor: CoresApp.textoPrimario,
         fontFamily: 'Roboto',
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.vermelhoAcao,
-          foregroundColor: AppColors.branco,
+          backgroundColor: CoresApp.vermelhoAcao,
+          foregroundColor: CoresApp.branco,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -89,7 +89,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.branco,
+        fillColor: CoresApp.branco,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 12,
@@ -98,56 +98,56 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(color: AppColors.textoSecundario, fontSize: 13),
+        hintStyle: const TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.branco,
+        color: CoresApp.branco,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.borda),
+          side: const BorderSide(color: CoresApp.borda),
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.branco,
-        selectedItemColor: AppColors.vermelhoAcao,
-        unselectedItemColor: AppColors.textoSecundario,
+        backgroundColor: CoresApp.branco,
+        selectedItemColor: CoresApp.vermelhoAcao,
+        unselectedItemColor: CoresApp.textoSecundario,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
-      dividerColor: AppColors.borda,
+      dividerColor: CoresApp.borda,
       tabBarTheme: const TabBarThemeData(
-        labelColor: AppColors.vermelhoAcao,
-        unselectedLabelColor: AppColors.textoSecundario,
-        indicatorColor: AppColors.vermelhoAcao,
+        labelColor: CoresApp.vermelhoAcao,
+        unselectedLabelColor: CoresApp.textoSecundario,
+        indicatorColor: CoresApp.vermelhoAcao,
         labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? AppColors.vermelhoAcao
-              : AppColors.branco,
+              ? CoresApp.vermelhoAcao
+              : CoresApp.branco,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
       radioTheme: const RadioThemeData(
-        fillColor: WidgetStatePropertyAll(AppColors.vermelhoAcao),
+        fillColor: WidgetStatePropertyAll(CoresApp.vermelhoAcao),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: const WidgetStatePropertyAll(AppColors.branco),
+        thumbColor: const WidgetStatePropertyAll(CoresApp.branco),
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? AppColors.vermelhoAcao
-              : AppColors.textoSecundario,
+              ? CoresApp.vermelhoAcao
+              : CoresApp.textoSecundario,
         ),
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.vermelhoAcao,
-        thumbColor: AppColors.vermelhoAcao,
-        inactiveTrackColor: AppColors.borda,
-        valueIndicatorColor: AppColors.azulConfianca,
+        activeTrackColor: CoresApp.vermelhoAcao,
+        thumbColor: CoresApp.vermelhoAcao,
+        inactiveTrackColor: CoresApp.borda,
+        valueIndicatorColor: CoresApp.azulConfianca,
       ),
     );
   }

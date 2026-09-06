@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/operario.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/step_progress_bar.dart';
-import '../operario/operario_shell.dart';
+import '../operario/operario_tela.dart';
 
 /// Tela de autenticação do usuário 'Operário' (ÉPICO 01 - US01.2):
 /// login simples ou cadastro completo em duas etapas (dados pessoais
@@ -31,16 +31,16 @@ class _TelaAutenticacaoOperarioState extends State<TelaAutenticacaoOperario> wit
         bottom: TabBar(
           controller: _tabController,
           tabs: const [Tab(text: 'Entrar'), Tab(text: 'Cadastrar')],
-          labelColor: AppColors.branco,
+          labelColor: CoresApp.branco,
           unselectedLabelColor: Color(0xFFB9C3D6),
-          indicatorColor: AppColors.branco,
+          indicatorColor: CoresApp.branco,
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: const [
           _OperarioLoginFormulario(),
-          _OperarioSignupFormulario(),
+          _OperarioCadastroFormulario(),
         ],
       ),
     );
@@ -63,7 +63,7 @@ class _OperarioLoginFormulario extends StatelessWidget {
           const SizedBox(height: 4),
           const Text(
             'Entre com seus dados para ver os serviços disponíveis na sua região.',
-            style: TextStyle(fontSize: 12, color: AppColors.textoSecundario),
+            style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario),
           ),
           const SizedBox(height: 20),
           const TextField(
@@ -79,7 +79,7 @@ class _OperarioLoginFormulario extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const OperarioShell()),
+                MaterialPageRoute(builder: (_) => const OperarioTela()),
               ),
               child: const Text('Entrar'),
             ),
@@ -90,14 +90,14 @@ class _OperarioLoginFormulario extends StatelessWidget {
   }
 }
 
-class _OperarioSignupFormulario extends StatefulWidget {
-  const _OperarioSignupFormulario();
+class _OperarioCadastroFormulario extends StatefulWidget {
+  const _OperarioCadastroFormulario();
 
   @override
-  State<_OperarioSignupFormulario> createState() => _OperarioSignupFormularioState();
+  State<_OperarioCadastroFormulario> createState() => _OperarioCadastroFormularioState();
 }
 
-class _OperarioSignupFormularioState extends State<_OperarioSignupFormulario> {
+class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario> {
   int _step = 0;
 
   // Parte 1 — Dados pessoais
@@ -131,9 +131,9 @@ class _OperarioSignupFormularioState extends State<_OperarioSignupFormulario> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-          child: StepProgressBar(
-            currentStep: _step,
-            stepLabels: const ['Dados pessoais', 'Perfil profissional'],
+          child: BarraProgressoEtapas(
+            etapaAtual: _step,
+            rotulosEtapas: const ['Dados pessoais', 'Perfil profissional'],
           ),
         ),
         Expanded(
@@ -227,17 +227,17 @@ class _OperarioSignupFormularioState extends State<_OperarioSignupFormulario> {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: _portfolioAnexado ? AppColors.verdeFundo : AppColors.branco,
+              color: _portfolioAnexado ? CoresApp.verdeFundo : CoresApp.branco,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: _portfolioAnexado ? AppColors.verdeSucesso : AppColors.borda,
+                color: _portfolioAnexado ? CoresApp.verdeSucesso : CoresApp.borda,
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   _portfolioAnexado ? Icons.check_circle_rounded : Icons.upload_file_rounded,
-                  color: _portfolioAnexado ? AppColors.verdeSucesso : AppColors.textoSecundario,
+                  color: _portfolioAnexado ? CoresApp.verdeSucesso : CoresApp.textoSecundario,
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -273,9 +273,9 @@ class _OperarioSignupFormularioState extends State<_OperarioSignupFormulario> {
               onSelected: (v) => setState(() {
                 v ? _escoposSelecionados.add(escopo) : _escoposSelecionados.remove(escopo);
               }),
-              selectedColor: AppColors.vermelhoFundo,
-              checkmarkColor: AppColors.vermelhoAcao,
-              side: BorderSide(color: selected ? AppColors.vermelhoAcao : AppColors.borda),
+              selectedColor: CoresApp.vermelhoFundo,
+              checkmarkColor: CoresApp.vermelhoAcao,
+              side: BorderSide(color: selected ? CoresApp.vermelhoAcao : CoresApp.borda),
             );
           }).toList(),
         ),
@@ -322,7 +322,7 @@ class _OperarioSignupFormularioState extends State<_OperarioSignupFormulario> {
       const SnackBar(content: Text('Cadastro de operário concluído com sucesso!')),
     );
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const OperarioShell()),
+      MaterialPageRoute(builder: (_) => const OperarioTela()),
     );
   }
 }

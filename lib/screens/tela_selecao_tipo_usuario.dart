@@ -14,7 +14,7 @@ class TelaSelecaoTipoUsuario extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.azulConfianca,
+      backgroundColor: CoresApp.azulConfianca,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -25,18 +25,18 @@ class TelaSelecaoTipoUsuario extends StatelessWidget {
                 width: 84,
                 height: 84,
                 decoration: const BoxDecoration(
-                  color: AppColors.branco,
+                  color: CoresApp.branco,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.volunteer_activism_rounded,
-                    color: AppColors.vermelhoAcao, size: 42),
+                    color: CoresApp.vermelhoAcao, size: 42),
               ),
               const SizedBox(height: 20),
               const Text(
                 'Mãos Solidárias',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: AppColors.branco,
+                  color: CoresApp.branco,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                 ),
@@ -58,7 +58,7 @@ class TelaSelecaoTipoUsuario extends StatelessWidget {
                   child: Text(
                     'Como você quer participar?',
                     style: TextStyle(
-                      color: AppColors.branco,
+                      color: CoresApp.branco,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -70,8 +70,8 @@ class TelaSelecaoTipoUsuario extends StatelessWidget {
                 icon: Icons.handyman_rounded,
                 title: TipoUsuario.operario.NomeDoTipo,
                 subtitle: TipoUsuario.operario.descricaoDoTipo,
-                accentColor: AppColors.vermelhoAcao,
-                accentBackground: AppColors.vermelhoFundo,
+                accentColor: CoresApp.vermelhoAcao,
+                accentBackground: CoresApp.vermelhoFundo,
                 onTap: () => _selecionarTipoUsuario(context, TipoUsuario.operario),
               ),
               const SizedBox(height: 12),
@@ -79,8 +79,8 @@ class TelaSelecaoTipoUsuario extends StatelessWidget {
                 icon: Icons.apartment_rounded,
                 title: TipoUsuario.instituicao.NomeDoTipo,
                 subtitle: TipoUsuario.instituicao.descricaoDoTipo,
-                accentColor: AppColors.amareloEscuro,
-                accentBackground: AppColors.amareloFundo,
+                accentColor: CoresApp.amareloEscuro,
+                accentBackground: CoresApp.amareloFundo,
                 onTap: () => _selecionarTipoUsuario(context, TipoUsuario.instituicao),
               ),
               const Spacer(flex: 3),

@@ -8,23 +8,26 @@ import '../../widgets/section_title.dart';
 
 /// Carteira de Benefícios do operário: saldo de pontos acumulados e
 /// vitrine de cupons parceiros para resgate (ÉPICO 05 - US05.2).
-class BenefitsScreen extends StatefulWidget {
-  const BenefitsScreen({super.key});
+class OperarioTelaBeneficios extends StatefulWidget {
+  const OperarioTelaBeneficios({super.key});
 
   @override
-  State<BenefitsScreen> createState() => _BenefitsScreenState();
+  State<OperarioTelaBeneficios> createState() => _OperarioTelaBeneficiosState();
 }
 
-class _BenefitsScreenState extends State<BenefitsScreen> {
+class _OperarioTelaBeneficiosState extends State<OperarioTelaBeneficios> {
   late int _saldo = mockOperarioAtual.pontos;
-  RewardCategory? _filtro;
+  CategoriaRecompensa? _filtro;
 
   @override
   Widget build(BuildContext context) {
-    final cupons = mockCoupons.where((c) => _filtro == null || c.categoria == _filtro).toList();
+    final cupons = mockCupons.where((c) => _filtro == null || c.categoria == _filtro).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Carteira de Benefícios')),
+      appBar: AppBar(
+          title: const Text('Carteira de Benefícios'),
+          automaticallyImplyLeading: false, //desativar a seta de voltar da topbar
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -33,7 +36,7 @@ class _BenefitsScreenState extends State<BenefitsScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [AppColors.azulConfianca, AppColors.azulClaro],
+                colors: [CoresApp.azulConfianca, CoresApp.azulClaro],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -51,7 +54,7 @@ class _BenefitsScreenState extends State<BenefitsScreen> {
                     Text(
                       '$_saldo',
                       style: const TextStyle(
-                        color: AppColors.branco,
+                        color: CoresApp.branco,
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
                       ),
@@ -65,27 +68,27 @@ class _BenefitsScreenState extends State<BenefitsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${mockOperarioAtual.servicosRealizados} serviços realizados · nível ${mockOperarioAtual.nivelExperiencia.label}',
+                  '${mockOperarioAtual.servicosRealizados} serviços realizados · nível ${mockOperarioAtual.nivelExperiencia.texto}',
                   style: const TextStyle(color: Color(0xFFC7D3E6), fontSize: 11),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          const SectionTitle(title: 'Vitrine de cupons'),
+          const TituloSecao(titulo: 'Vitrine de cupons'),
           const SizedBox(height: 10),
           SizedBox(
             height: 34,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: RewardCategory.values.length + 1,
+              itemCount: CategoriaRecompensa.values.length + 1,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 if (i == 0) {
                   return _filterChip('Todos', _filtro == null, () => setState(() => _filtro = null));
                 }
-                final cat = RewardCategory.values[i - 1];
-                return _filterChip(cat.label, _filtro == cat, () => setState(() => _filtro = cat));
+                final cat = CategoriaRecompensa.values[i - 1];
+                return _filterChip(cat.texto, _filtro == cat, () => setState(() => _filtro = cat));
               },
             ),
           ),
@@ -93,10 +96,10 @@ class _BenefitsScreenState extends State<BenefitsScreen> {
           ...cupons.map(
             (c) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: CouponCard(
-                coupon: c,
+              child: CardCupom(
+                cupom: c,
                 saldoPontos: _saldo,
-                onResgatar: () => _resgatar(c),
+                aoResgatar: () => _resgatar(c),
               ),
             ),
           ),
@@ -110,16 +113,16 @@ class _BenefitsScreenState extends State<BenefitsScreen> {
       label: Text(label, style: const TextStyle(fontSize: 11)),
       selected: selected,
       onSelected: (_) => onTap(),
-      selectedColor: AppColors.vermelhoAcao,
-      backgroundColor: AppColors.branco,
-      labelStyle: TextStyle(color: selected ? AppColors.branco : AppColors.azulConfianca),
+      selectedColor: CoresApp.vermelhoAcao,
+      backgroundColor: CoresApp.branco,
+      labelStyle: TextStyle(color: selected ? CoresApp.branco : CoresApp.azulConfianca),
       shape: StadiumBorder(
-        side: BorderSide(color: selected ? AppColors.vermelhoAcao : AppColors.azulConfianca),
+        side: BorderSide(color: selected ? CoresApp.vermelhoAcao : CoresApp.azulConfianca),
       ),
     );
   }
 
-  void _resgatar(Coupon c) {
+  void _resgatar(Cupom c) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(

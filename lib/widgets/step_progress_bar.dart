@@ -3,32 +3,32 @@ import '../theme/app_theme.dart';
 
 /// Indicador visual de progresso para os formulários de cadastro em
 /// duas partes (US01.2 e US01.3: "Parte 1" / "Parte 2").
-class StepProgressBar extends StatelessWidget {
-  final int currentStep;
-  final List<String> stepLabels;
+class BarraProgressoEtapas extends StatelessWidget {
+  final int etapaAtual;
+  final List<String> rotulosEtapas;
 
-  const StepProgressBar({
+  const BarraProgressoEtapas({
     super.key,
-    required this.currentStep,
-    required this.stepLabels,
+    required this.etapaAtual,
+    required this.rotulosEtapas,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: List.generate(stepLabels.length * 2 - 1, (i) {
+      children: List.generate(rotulosEtapas.length * 2 - 1, (i) {
         if (i.isOdd) {
-          final leftStepDone = (i ~/ 2) < currentStep;
+          final leftStepDone = (i ~/ 2) < etapaAtual;
           return Expanded(
             child: Container(
               height: 2,
-              color: leftStepDone ? AppColors.vermelhoAcao : AppColors.borda,
+              color: leftStepDone ? CoresApp.vermelhoAcao : CoresApp.borda,
             ),
           );
         }
         final stepIndex = i ~/ 2;
-        final isActive = stepIndex == currentStep;
-        final isDone = stepIndex < currentStep;
+        final isActive = stepIndex == etapaAtual;
+        final isDone = stepIndex < etapaAtual;
         return Column(
           children: [
             Container(
@@ -38,33 +38,33 @@ class StepProgressBar extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: (isActive || isDone)
-                    ? AppColors.vermelhoAcao
-                    : AppColors.branco,
+                    ? CoresApp.vermelhoAcao
+                    : CoresApp.branco,
                 border: Border.all(
                   color: (isActive || isDone)
-                      ? AppColors.vermelhoAcao
-                      : AppColors.borda,
+                      ? CoresApp.vermelhoAcao
+                      : CoresApp.borda,
                   width: 1.5,
                 ),
               ),
               child: isDone
-                  ? const Icon(Icons.check_rounded, size: 16, color: AppColors.branco)
+                  ? const Icon(Icons.check_rounded, size: 16, color: CoresApp.branco)
                   : Text(
                       '${stepIndex + 1}',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: isActive ? AppColors.branco : AppColors.textoSecundario,
+                        color: isActive ? CoresApp.branco : CoresApp.textoSecundario,
                       ),
                     ),
             ),
             const SizedBox(height: 4),
             Text(
-              stepLabels[stepIndex],
+              rotulosEtapas[stepIndex],
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? AppColors.textoPrimario : AppColors.textoSecundario,
+                color: isActive ? CoresApp.textoPrimario : CoresApp.textoSecundario,
               ),
             ),
           ],

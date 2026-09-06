@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/instituicao.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/step_progress_bar.dart';
-import '../instituicao/institution_shell.dart';
+import '../instituicao/instituicao_tela.dart';
 
 /// Tela de autenticação do usuário 'Instituição' (ÉPICO 01 - US01.3):
 /// login simples ou cadastro completo em duas etapas (dados
@@ -34,24 +34,24 @@ class _TelaAutenticacaoInstituicaoState extends State<TelaAutenticacaoInstituica
         bottom: TabBar(
           controller: _tabController,
           tabs: const [Tab(text: 'Entrar'), Tab(text: 'Cadastrar')],
-          labelColor: AppColors.branco,
+          labelColor: CoresApp.branco,
           unselectedLabelColor: Color(0xFFB9C3D6),
-          indicatorColor: AppColors.branco,
+          indicatorColor: CoresApp.branco,
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: const [
-          _InstitutionLoginForm(),
-          _InstitutionSignupForm(),
+          _InstituicaoLoginForm(),
+          _InstituicaoCadastroForm(),
         ],
       ),
     );
   }
 }
 
-class _InstitutionLoginForm extends StatelessWidget {
-  const _InstitutionLoginForm();
+class _InstituicaoLoginForm extends StatelessWidget {
+  const _InstituicaoLoginForm();
 
   @override
   Widget build(BuildContext context) {
@@ -61,12 +61,12 @@ class _InstitutionLoginForm extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
-          const Text('Bem-vinda de volta!',
+          const Text('Bem-vindo de volta!',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           const Text(
             'Entre com os dados da instituição para publicar e gerenciar serviços.',
-            style: TextStyle(fontSize: 12, color: AppColors.textoSecundario),
+            style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario),
           ),
           const SizedBox(height: 20),
           const TextField(
@@ -83,7 +83,7 @@ class _InstitutionLoginForm extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const InstitutionShell()),
+                MaterialPageRoute(builder: (_) => const InstituicaoTela()),
               ),
               child: const Text('Entrar'),
             ),
@@ -94,14 +94,14 @@ class _InstitutionLoginForm extends StatelessWidget {
   }
 }
 
-class _InstitutionSignupForm extends StatefulWidget {
-  const _InstitutionSignupForm();
+class _InstituicaoCadastroForm extends StatefulWidget {
+  const _InstituicaoCadastroForm();
 
   @override
-  State<_InstitutionSignupForm> createState() => _InstitutionSignupFormState();
+  State<_InstituicaoCadastroForm> createState() => _InstituicaoCadastroFormState();
 }
 
-class _InstitutionSignupFormState extends State<_InstitutionSignupForm> {
+class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
   int _step = 0;
 
   // Parte 1 — Dados institucionais
@@ -112,9 +112,9 @@ class _InstitutionSignupFormState extends State<_InstitutionSignupForm> {
   final _localizacaoController = TextEditingController();
 
   // Parte 2 — Classificação institucional
-  final Set<InstitutionType> _tiposSelecionados = {};
-  final Map<InstitutionType, TextEditingController> _camposAdicionais = {
-    for (final t in InstitutionType.values) t: TextEditingController(),
+  final Set<TipoInstituicao> _tiposSelecionados = {};
+  final Map<TipoInstituicao, TextEditingController> _camposAdicionais = {
+    for (final t in TipoInstituicao.values) t: TextEditingController(),
   };
 
   @override
@@ -136,9 +136,9 @@ class _InstitutionSignupFormState extends State<_InstitutionSignupForm> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-          child: StepProgressBar(
-            currentStep: _step,
-            stepLabels: const ['Dados institucionais', 'Classificação'],
+          child: BarraProgressoEtapas(
+            etapaAtual: _step,
+            rotulosEtapas: const ['Dados institucionais', 'Classificação'],
           ),
         ),
         Expanded(
@@ -228,10 +228,10 @@ class _InstitutionSignupFormState extends State<_InstitutionSignupForm> {
         const SizedBox(height: 4),
         const Text(
           'Selecione o(s) tipo(s) de entidade que melhor descreve(m) sua instituição.',
-          style: TextStyle(fontSize: 12, color: AppColors.textoSecundario),
+          style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario),
         ),
         const SizedBox(height: 10),
-        ...InstitutionType.values.map((tipo) {
+        ...TipoInstituicao.values.map((tipo) {
           final selecionado = _tiposSelecionados.contains(tipo);
           return Column(
             children: [
@@ -240,7 +240,7 @@ class _InstitutionSignupFormState extends State<_InstitutionSignupForm> {
                 onChanged: (v) => setState(() {
                   v == true ? _tiposSelecionados.add(tipo) : _tiposSelecionados.remove(tipo);
                 }),
-                title: Text(tipo.label, style: const TextStyle(fontSize: 13)),
+                title: Text(tipo.texto, style: const TextStyle(fontSize: 13)),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
                 dense: true,
@@ -250,7 +250,7 @@ class _InstitutionSignupFormState extends State<_InstitutionSignupForm> {
                   padding: const EdgeInsets.only(left: 8, bottom: 12),
                   child: TextField(
                     controller: _camposAdicionais[tipo],
-                    decoration: InputDecoration(labelText: tipo.campoAdicionalLabel),
+                    decoration: InputDecoration(labelText: tipo.textoCampoAdicional),
                   ),
                 ),
             ],
@@ -265,7 +265,7 @@ class _InstitutionSignupFormState extends State<_InstitutionSignupForm> {
       const SnackBar(content: Text('Cadastro institucional concluído com sucesso!')),
     );
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const InstitutionShell()),
+      MaterialPageRoute(builder: (_) => const InstituicaoTela()),
     );
   }
 }

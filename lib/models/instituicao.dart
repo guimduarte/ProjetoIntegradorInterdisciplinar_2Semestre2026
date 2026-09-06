@@ -1,17 +1,17 @@
 /// Tipo de entidade selecionável no cadastro institucional
 /// (US01.3, Parte 2).
-enum InstitutionType { igreja, causasSociais, ong, outros }
+enum TipoInstituicao { igreja, causasSociais, ong, outros }
 
-extension InstitutionTypeX on InstitutionType {
-  String get label {
+extension TipoInstituicaoX on TipoInstituicao {
+  String get texto {
     switch (this) {
-      case InstitutionType.igreja:
+      case TipoInstituicao.igreja:
         return 'Igreja';
-      case InstitutionType.causasSociais:
+      case TipoInstituicao.causasSociais:
         return 'Causas Sociais';
-      case InstitutionType.ong:
+      case TipoInstituicao.ong:
         return 'ONGs';
-      case InstitutionType.outros:
+      case TipoInstituicao.outros:
         return 'Outros';
     }
   }
@@ -19,33 +19,33 @@ extension InstitutionTypeX on InstitutionType {
   /// Rótulo do campo dinâmico adicional exibido quando este tipo é
   /// selecionado (US01.3: "Campos dinâmicos de informações oficiais
   /// adicionais solicitados com base no tipo de instituição").
-  String get campoAdicionalLabel {
+  String get textoCampoAdicional {
     switch (this) {
-      case InstitutionType.igreja:
+      case TipoInstituicao.igreja:
         return 'Denominação/Diocese vinculada';
-      case InstitutionType.causasSociais:
+      case TipoInstituicao.causasSociais:
         return 'Área social de atuação';
-      case InstitutionType.ong:
+      case TipoInstituicao.ong:
         return 'Número de registro (CNAS/CNPJ social)';
-      case InstitutionType.outros:
+      case TipoInstituicao.outros:
         return 'Especifique o tipo de instituição';
     }
   }
 }
 
 /// Perfil completo do usuário 'Instituição' (ÉPICO 01 - US01.3).
-class InstituicaoProfile {
+class PerfilInstituicao {
   final String nome;
   final String emailInstitucional;
   final String telefone;
   final String cnpj;
   final String localizacao;
-  final List<InstitutionType> tipos;
-  final Map<InstitutionType, String> informacoesAdicionais;
+  final List<TipoInstituicao> tipos;
+  final Map<TipoInstituicao, String> informacoesAdicionais;
   final double totalDoado;
   final int servicosPublicados;
 
-  const InstituicaoProfile({
+  const PerfilInstituicao({
     required this.nome,
     required this.emailInstitucional,
     required this.telefone,
@@ -60,15 +60,15 @@ class InstituicaoProfile {
 
 /// Perfil mock usado para simular a sessão autenticada da instituição
 /// no protótipo (sem integração com backend/AWS).
-final InstituicaoProfile mockInstituicaoAtual = InstituicaoProfile(
+final PerfilInstituicao mockInstituicaoAtual = PerfilInstituicao(
   nome: 'Associação Mãos que Ajudam',
   emailInstitucional: 'contato@maosqueajudam.org',
   telefone: '(11) 3456-7890',
   cnpj: '12.345.678/0001-90',
   localizacao: 'São Bernardo do Campo, SP',
-  tipos: const [InstitutionType.ong],
+  tipos: const [TipoInstituicao.ong],
   informacoesAdicionais: const {
-    InstitutionType.ong: 'CNAS 71.023.456/0001-12',
+    TipoInstituicao.ong: 'CNAS 71.023.456/0001-12',
   },
   totalDoado: 340,
   servicosPublicados: 12,

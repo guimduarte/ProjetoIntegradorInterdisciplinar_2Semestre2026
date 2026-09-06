@@ -5,7 +5,7 @@ import '../theme/app_theme.dart';
 /// (pedreiro, carpinteiro, pintor, eletricista, técnico e encanador) na tela inicial.
 class ItemCategoria extends StatefulWidget {
   final IconData icon;
-  final String label;
+  final String texto;
   final Color background;
   final Color iconColor;
   final VoidCallback? onTap;
@@ -14,7 +14,7 @@ class ItemCategoria extends StatefulWidget {
   const ItemCategoria({
     super.key,
     required this.icon,
-    required this.label,
+    required this.texto,
     required this.background,
     required this.iconColor,
     this.onTap,
@@ -102,9 +102,9 @@ class _ItemCategoriaState extends State<ItemCategoria>
           onTap: _handleTap,
           behavior: HitTestBehavior.opaque,
           child: Text(
-            widget.label,
+            widget.texto,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: fontSize, color: AppColors.textoPrimario),
+            style: TextStyle(fontSize: fontSize, color: CoresApp.textoPrimario),
           ),
         ),
       ],

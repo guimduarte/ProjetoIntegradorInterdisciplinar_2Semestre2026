@@ -6,16 +6,16 @@ class Profissional {
   final String especialidade;
   final double avaliacao;
   final double distanciaKm;
-  final bool isNgoVerified;
-  final bool isVolunteerService;
+  final bool ongEstaVerificada;
+  final bool ehServicoVoluntario;
 
   const Profissional({
     required this.nome,
     required this.especialidade,
     required this.avaliacao,
     required this.distanciaKm,
-    this.isNgoVerified = false,
-    this.isVolunteerService = false,
+    this.ongEstaVerificada = false,
+    this.ehServicoVoluntario = false,
   });
 
   String get iniciais {
@@ -30,41 +30,41 @@ class Profissional {
 }
 
 /// Categoria de serviço manual oferecida na plataforma.
-class ServiceCategory {
-  final String label;
-  final String iconAsset;
+class CategoriaServico {
+  final String texto;
+  final String caminhoIcone;
 
-  const ServiceCategory({required this.label, required this.iconAsset});
+  const CategoriaServico({required this.texto, required this.caminhoIcone});
 }
 
 /// Dados de exemplo usados para popular as telas do protótipo.
-final List<Profissional> mockProfessionals = [
+final List<Profissional> mockProfissionais = [
   const Profissional(
     nome: 'Carlos Alberto',
     especialidade: 'Pedreiro',
     avaliacao: 4.8,
     distanciaKm: 2.3,
-    isNgoVerified: true,
+    ongEstaVerificada: true,
   ),
   const Profissional(
     nome: 'Marta Souza',
     especialidade: 'Pintora',
     avaliacao: 4.7,
     distanciaKm: 3.1,
-    isVolunteerService: true,
+    ehServicoVoluntario: true,
   ),
   const Profissional(
     nome: 'João Ricardo',
     especialidade: 'Eletricista',
     avaliacao: 4.9,
     distanciaKm: 1.4,
-    isNgoVerified: true,
+    ongEstaVerificada: true,
   ),
   const Profissional(
     nome: 'Felipe Nogueira',
     especialidade: 'Carpinteiro',
     avaliacao: 4.6,
     distanciaKm: 4.0,
-    isVolunteerService: true,
+    ehServicoVoluntario: true,
   ),
 ];

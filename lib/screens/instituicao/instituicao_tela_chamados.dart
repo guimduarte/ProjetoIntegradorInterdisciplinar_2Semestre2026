@@ -1,32 +1,35 @@
 import 'package:flutter/material.dart';
-import '../../models/service_application.dart';
+import '../../models/modelo_aplicacao_de_servico.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/application_card.dart';
+import '../../widgets/card_aplicacao_de_operario.dart';
 
 /// Central de chamados da instituição (ÉPICO 03 - US03.2): lista as
 /// candidaturas recebidas com a visualização restrita do perfil do
 /// operário e as ações de aceitar/recusar.
-class RequestsScreen extends StatefulWidget {
-  const RequestsScreen({super.key});
+class InstituicaoTelaChamados extends StatefulWidget {
+  const InstituicaoTelaChamados({super.key});
 
   @override
-  State<RequestsScreen> createState() => _RequestsScreenState();
+  State<InstituicaoTelaChamados> createState() => _InstituicaoTelaChamadosState();
 }
 
-class _RequestsScreenState extends State<RequestsScreen> {
-  final List<ServiceApplication> _applications = mockApplications;
+class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
+  final List<AplicacaoDeServico> _applications = mockCandidaturas;
 
   @override
   Widget build(BuildContext context) {
-    final pendentes = _applications.where((a) => a.status == ApplicationStatus.pendente).toList();
-    final decididas = _applications.where((a) => a.status != ApplicationStatus.pendente).toList();
+    final pendentes = _applications.where((a) => a.status == StatusCandidatura.pendente).toList();
+    final decididas = _applications.where((a) => a.status != StatusCandidatura.pendente).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Central de Chamados')),
+      appBar: AppBar(
+          title: const Text('Central de Chamados'),
+          automaticallyImplyLeading: false
+      ),
       body: _applications.isEmpty
           ? const Center(
               child: Text('Nenhuma candidatura recebida ainda.',
-                  style: TextStyle(color: AppColors.textoSecundario, fontSize: 13)),
+                  style: TextStyle(color: CoresApp.textoSecundario, fontSize: 13)),
             )
           : ListView(
               padding: const EdgeInsets.all(16),
@@ -37,10 +40,10 @@ class _RequestsScreenState extends State<RequestsScreen> {
                   const SizedBox(height: 10),
                   ...pendentes.map((a) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: ApplicationCard(
-                          application: a,
-                          onAceitar: () => _decidir(a, ApplicationStatus.aceita),
-                          onRecusar: () => _decidir(a, ApplicationStatus.recusada),
+                        child: CardAplicacaoDeOperario(
+                          candidatura: a,
+                          onAceitar: () => _decidir(a, StatusCandidatura.aceita),
+                          onRecusar: () => _decidir(a, StatusCandidatura.recusada),
                         ),
                       )),
                 ],
@@ -51,8 +54,8 @@ class _RequestsScreenState extends State<RequestsScreen> {
                   const SizedBox(height: 10),
                   ...decididas.map((a) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: ApplicationCard(
-                          application: a,
+                        child: CardAplicacaoDeOperario(
+                          candidatura: a,
                           onAceitar: () {},
                           onRecusar: () {},
                         ),
@@ -63,12 +66,12 @@ class _RequestsScreenState extends State<RequestsScreen> {
     );
   }
 
-  void _decidir(ServiceApplication a, ApplicationStatus status) {
+  void _decidir(AplicacaoDeServico a, StatusCandidatura status) {
     setState(() => a.status = status);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          status == ApplicationStatus.aceita
+          status == StatusCandidatura.aceita
               ? '${a.operarioNome} foi aceito para o serviço.'
               : 'Candidatura de ${a.operarioNome} recusada.',
         ),
