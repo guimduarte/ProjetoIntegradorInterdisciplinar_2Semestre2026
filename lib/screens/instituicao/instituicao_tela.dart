@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import '../../theme/tema_do_app.dart';
 import '../shared/tela_perfil.dart';
 import '../shared/tela_avaliacoes.dart';
 import 'instituicao_tela_home.dart';

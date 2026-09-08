@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../models/modelo_aplicacao_de_servico.dart';
-import '../../theme/app_theme.dart';
+import '../../models/candidatura_de_servico.dart';
+import '../../theme/tema_do_app.dart';
 
 /// Tela "Notificações", presente no menu inferior de ambos os
 /// perfis (ÉPICO 02 - US02.1). Exibe alertas de novos serviços no

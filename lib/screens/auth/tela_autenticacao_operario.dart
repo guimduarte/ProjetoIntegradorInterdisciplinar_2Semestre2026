@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/operario.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/step_progress_bar.dart';
+import '../../theme/tema_do_app.dart';
+import '../../widgets/barra_progresso_etapas.dart';
 import '../operario/operario_tela.dart';
 
 /// Tela de autenticação do usuário 'Operário' (ÉPICO 01 - US01.2):

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../models/experience_level.dart';
+import '../../models/nivel_experiencia.dart';
 import '../../models/operario.dart';
-import '../../models/service_order.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/section_title.dart';
+import '../../models/ordem_servico.dart';
+import '../../theme/tema_do_app.dart';
+import '../../widgets/titulo_secao.dart';
 import '../../widgets/card_servicos.dart';
-import '../shared/notifications_screen.dart';
+import '../shared/tela_notificacoes.dart';
 import 'operario_tela_servicos.dart';
 import 'operario_tela_de_detalhes_do_servico.dart';
 

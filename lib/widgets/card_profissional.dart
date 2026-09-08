@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/profissional.dart';
-import '../theme/app_theme.dart';
+import '../theme/tema_do_app.dart';
 
 /// Card que exibe os dados de um profissional disponível para
 /// prestar serviço, incluindo avaliação, distância e selos de

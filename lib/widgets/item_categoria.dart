@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../theme/tema_do_app.dart';
 
 /// Círculo com ícone representando uma categoria de serviço manual
 /// (pedreiro, carpinteiro, pintor, eletricista, técnico e encanador) na tela inicial.

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/tela_selecao_tipo_usuario.dart';
-import 'theme/app_theme.dart';
+import 'theme/tema_do_app.dart';
 
 void main() {
   runApp(const MaosSolidariasApp());

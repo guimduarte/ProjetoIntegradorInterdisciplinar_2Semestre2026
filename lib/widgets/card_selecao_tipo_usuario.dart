@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../theme/tema_do_app.dart';
 
 /// Botão grande e intuitivo usado na tela de seleção inicial de papel
 /// solidário (US01.1: "Exibir botões visíveis e intuitivos para

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/tipo_usuario.dart';
-import '../theme/app_theme.dart';
+import '../theme/tema_do_app.dart';
 import '../widgets/card_selecao_tipo_usuario.dart';
 import 'auth/tela_autenticacao_operario.dart';
 import 'auth/tela_autenticacao_instituicao.dart';
