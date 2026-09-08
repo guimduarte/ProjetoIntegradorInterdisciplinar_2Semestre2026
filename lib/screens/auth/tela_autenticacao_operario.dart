@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../models/operario.dart';
 import '../../theme/tema_do_app.dart';
+import '../../utils/validadores_campos_cadastro.dart';
 import '../../widgets/barra_progresso_etapas.dart';
 import '../operario/operario_tela.dart';
 
@@ -47,44 +49,61 @@ class _TelaAutenticacaoOperarioState extends State<TelaAutenticacaoOperario> wit
   }
 }
 
-class _OperarioLoginFormulario extends StatelessWidget {
+class _OperarioLoginFormulario extends StatefulWidget {
   const _OperarioLoginFormulario();
+
+  @override
+  State<_OperarioLoginFormulario> createState() => _OperarioLoginFormularioState();
+}
+
+class _OperarioLoginFormularioState extends State<_OperarioLoginFormulario> {
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 12),
-          const Text('Bem-vindo de volta!',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          const Text(
-            'Entre com seus dados para ver os serviços disponíveis na sua região.',
-            style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario),
-          ),
-          const SizedBox(height: 20),
-          const TextField(
-            decoration: InputDecoration(labelText: 'E-mail', hintText: 'seuemail@exemplo.com'),
-          ),
-          const SizedBox(height: 12),
-          const TextField(
-            obscureText: true,
-            decoration: InputDecoration(labelText: 'Senha'),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const OperarioTela()),
-              ),
-              child: const Text('Entrar'),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            const Text('Bem-vindo de volta!',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            const Text(
+              'Entre com seus dados para ver os serviços disponíveis na sua região.',
+              style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            TextFormField(
+              decoration: const InputDecoration(labelText: 'E-mail', hintText: 'seuemail@exemplo.com'),
+              validator: ValidadoresCamposCadastro.email,
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Senha'),
+              validator: ValidadoresCamposCadastro.obrigatorio,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const OperarioTela()),
+                    );
+                  }
+                },
+                child: const Text('Entrar'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -99,6 +118,17 @@ class _OperarioCadastroFormulario extends StatefulWidget {
 
 class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario> {
   int _step = 0;
+  final _formKeyUm = GlobalKey<FormState>();
+  final _formKeyDois = GlobalKey<FormState>();
+
+  final _cpfMask = MaskTextInputFormatter(
+    mask: '###.###.###-##',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+  final _telefoneMask = MaskTextInputFormatter(
+    mask: '(##) #####-####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
 
   // Parte 1 — Dados pessoais
   final _nomeController = TextEditingController();
@@ -139,7 +169,10 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-            child: _step == 0 ? _buildStepUm() : _buildStepDois(),
+            child: Form(
+              key: _step == 0 ? _formKeyUm : _formKeyDois,
+              child: _step == 0 ? _formularioPassoUm() : _formularioPassoDois(),
+            ),
           ),
         ),
         Padding(
@@ -159,9 +192,13 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
                 child: ElevatedButton(
                   onPressed: () {
                     if (_step == 0) {
-                      setState(() => _step = 1);
+                      if (_formKeyUm.currentState!.validate()) {
+                        setState(() => _step = 1);
+                      }
                     } else {
-                      _finalizarCadastro(context);
+                      if (_formKeyDois.currentState!.validate()) {
+                        _finalizarCadastro(context);
+                      }
                     }
                   },
                   child: Text(_step == 0 ? 'Continuar' : 'Concluir cadastro'),
@@ -174,47 +211,62 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
     );
   }
 
-  Widget _buildStepUm() {
+  Widget _formularioPassoUm() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Parte 1 — Dados pessoais',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         const SizedBox(height: 14),
-        TextField(
+        TextFormField(
           controller: _nomeController,
           decoration: const InputDecoration(labelText: 'Nome completo'),
+          validator: ValidadoresCamposCadastro.obrigatorio,
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _emailController,
           decoration: const InputDecoration(labelText: 'E-mail'),
+          validator: ValidadoresCamposCadastro.email,
+          keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _telefoneController,
-          decoration: const InputDecoration(labelText: 'Telefone'),
+          decoration: const InputDecoration(labelText: 'Telefone', hintText: '(00) 00000-0000'),
+          validator: ValidadoresCamposCadastro.telefone,
+          inputFormatters: [_telefoneMask],
+          keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _cpfController,
-          decoration: const InputDecoration(labelText: 'CPF'),
+          decoration: const InputDecoration(labelText: 'CPF', hintText: '000.000.000-00'),
+          validator: ValidadoresCamposCadastro.cpf,
+          inputFormatters: [_cpfMask],
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _localizacaoController,
           decoration: const InputDecoration(labelText: 'Localização de referência'),
+          validator: ValidadoresCamposCadastro.obrigatorio,
         ),
         const SizedBox(height: 12),
-        const TextField(
+        TextFormField(
           obscureText: true,
-          decoration: InputDecoration(labelText: 'Senha de acesso'),
+          decoration: const InputDecoration(labelText: 'Senha de acesso'),
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Campo obrigatório';
+            if (v.length < 3) return 'A senha deve ter pelo menos 3 caracteres';
+            return null;
+          },
         ),
       ],
     );
   }
 
-  Widget _buildStepDois() {
+  Widget _formularioPassoDois() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -249,7 +301,7 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
           ),
         ),
         const SizedBox(height: 14),
-        TextField(
+        TextFormField(
           controller: _experienciasController,
           maxLines: 3,
           decoration: const InputDecoration(
@@ -257,6 +309,7 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
             hintText: 'Conte um pouco sobre seus trabalhos já realizados',
             alignLabelWithHint: true,
           ),
+          validator: ValidadoresCamposCadastro.obrigatorio,
         ),
         const SizedBox(height: 16),
         const Text('Escopo de trabalho',

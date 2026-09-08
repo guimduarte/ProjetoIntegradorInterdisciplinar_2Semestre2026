@@ -12,6 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   amplify_flutter: ^2.11.0
   amplify_auth_cognito: ^2.11.0
+  mask_text_input_formatter: ^2.5.0
 
 dev_dependencies:
   flutter_test:

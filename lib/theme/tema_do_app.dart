@@ -57,6 +57,11 @@ class TemaApp {
         surface: CoresApp.branco,
         error: CoresApp.vermelhoEscuro,
       ),
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: CoresApp.textoPrimario,
+        selectionColor: CoresApp.azulFundo,
+        selectionHandleColor: CoresApp.azulConfianca,
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: CoresApp.azulConfianca,
         foregroundColor: CoresApp.branco,
@@ -98,6 +103,7 @@ class TemaApp {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
+        floatingLabelStyle: const TextStyle(color: CoresApp.textoPrimario),
         hintStyle: const TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
       ),
       cardTheme: CardThemeData(
