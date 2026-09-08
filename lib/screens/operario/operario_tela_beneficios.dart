@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../models/experience_level.dart';
+import '../../models/nivel_experiencia.dart';
 import '../../models/operario.dart';
-import '../../models/reward.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/coupon_card.dart';
-import '../../widgets/section_title.dart';
+import '../../models/recompensa.dart';
+import '../../theme/tema_do_app.dart';
+import '../../widgets/card_cupom.dart';
+import '../../widgets/titulo_secao.dart';
 
 /// Carteira de Benefícios do operário: saldo de pontos acumulados e
 /// vitrine de cupons parceiros para resgate (ÉPICO 05 - US05.2).

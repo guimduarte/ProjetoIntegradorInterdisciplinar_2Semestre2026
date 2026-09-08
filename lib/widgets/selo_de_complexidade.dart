@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/service_order.dart';
+import '../models/ordem_servico.dart';
 
 /// Selo colorido que indica o nível de complexidade de um serviço e,
 /// opcionalmente, a taxa de pontos por hora correspondente (US03.1 e

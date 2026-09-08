@@ -1,4 +1,4 @@
-import 'experience_level.dart';
+import 'nivel_experiencia.dart';
 
 /// Escopos de trabalho manual que um operário pode selecionar em seu
 /// cadastro profissional (US01.2, Parte 2).

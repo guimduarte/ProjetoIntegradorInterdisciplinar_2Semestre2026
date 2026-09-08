@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../models/instituicao.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/step_progress_bar.dart';
+import '../../theme/tema_do_app.dart';
+import '../../utils/validadores_campos_cadastro.dart';
+import '../../widgets/barra_progresso_etapas.dart';
 import '../instituicao/instituicao_tela.dart';
 
 /// Tela de autenticação do usuário 'Instituição' (ÉPICO 01 - US01.3):
@@ -50,45 +52,62 @@ class _TelaAutenticacaoInstituicaoState extends State<TelaAutenticacaoInstituica
   }
 }
 
-class _InstituicaoLoginForm extends StatelessWidget {
+class _InstituicaoLoginForm extends StatefulWidget {
   const _InstituicaoLoginForm();
+
+  @override
+  State<_InstituicaoLoginForm> createState() => _InstituicaoLoginFormState();
+}
+
+class _InstituicaoLoginFormState extends State<_InstituicaoLoginForm> {
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 12),
-          const Text('Bem-vindo de volta!',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          const Text(
-            'Entre com os dados da instituição para publicar e gerenciar serviços.',
-            style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario),
-          ),
-          const SizedBox(height: 20),
-          const TextField(
-            decoration:
-                InputDecoration(labelText: 'E-mail institucional', hintText: 'contato@ong.org'),
-          ),
-          const SizedBox(height: 12),
-          const TextField(
-            obscureText: true,
-            decoration: InputDecoration(labelText: 'Senha'),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const InstituicaoTela()),
-              ),
-              child: const Text('Entrar'),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            const Text('Bem-vindo de volta!',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            const Text(
+              'Entre com os dados da instituição para publicar e gerenciar serviços.',
+              style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            TextFormField(
+              decoration:
+                  const InputDecoration(labelText: 'E-mail institucional', hintText: 'contato@ong.org'),
+              validator: ValidadoresCamposCadastro.email,
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Senha'),
+              validator: ValidadoresCamposCadastro.obrigatorio,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const InstituicaoTela()),
+                    );
+                  }
+                },
+                child: const Text('Entrar'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -103,6 +122,17 @@ class _InstituicaoCadastroForm extends StatefulWidget {
 
 class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
   int _step = 0;
+  final _formKeyUm = GlobalKey<FormState>();
+  final _formKeyDois = GlobalKey<FormState>();
+
+  final _cnpjMask = MaskTextInputFormatter(
+    mask: '##.###.###/####-##',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+  final _telefoneMask = MaskTextInputFormatter(
+    mask: '(##) ####-####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
 
   // Parte 1 — Dados institucionais
   final _nomeController = TextEditingController();
@@ -144,7 +174,10 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-            child: _step == 0 ? _buildStepUm() : _buildStepDois(),
+            child: Form(
+              key: _step == 0 ? _formKeyUm : _formKeyDois,
+              child: _step == 0 ? _formularioPassoUm() : _formularioPassoDois(),
+            ),
           ),
         ),
         Padding(
@@ -164,9 +197,23 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (_step == 0) {
-                      setState(() => _step = 1);
+                      if (_formKeyUm.currentState!.validate()) {
+                        setState(() => _step = 1);
+                      }
                     } else {
-                      _finalizarCadastro(context);
+                      final formValido = _formKeyDois.currentState!.validate();
+                      if (_tiposSelecionados.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Selecione pelo menos um tipo de instituição.'),
+                            backgroundColor: CoresApp.vermelhoEscuro,
+                          ),
+                        );
+                        return;
+                      }
+                      if (formValido) {
+                        _finalizarCadastro(context);
+                      }
                     }
                   },
                   child: Text(_step == 0 ? 'Continuar' : 'Concluir cadastro'),
@@ -179,47 +226,62 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
     );
   }
 
-  Widget _buildStepUm() {
+  Widget _formularioPassoUm() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Parte 1 — Dados institucionais',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         const SizedBox(height: 14),
-        TextField(
+        TextFormField(
           controller: _nomeController,
           decoration: const InputDecoration(labelText: 'Nome da instituição'),
+          validator: ValidadoresCamposCadastro.obrigatorio,
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _emailController,
           decoration: const InputDecoration(labelText: 'E-mail institucional'),
+          validator: ValidadoresCamposCadastro.email,
+          keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _telefoneController,
-          decoration: const InputDecoration(labelText: 'Telefone'),
+          decoration: const InputDecoration(labelText: 'Telefone', hintText: '(00) 0000-0000'),
+          validator: ValidadoresCamposCadastro.telefone,
+          inputFormatters: [_telefoneMask],
+          keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _cnpjController,
-          decoration: const InputDecoration(labelText: 'CNPJ'),
+          decoration: const InputDecoration(labelText: 'CNPJ', hintText: '00.000.000/0000-00'),
+          validator: ValidadoresCamposCadastro.cnpj,
+          inputFormatters: [_cnpjMask],
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _localizacaoController,
           decoration: const InputDecoration(labelText: 'Localização'),
+          validator: ValidadoresCamposCadastro.obrigatorio,
         ),
         const SizedBox(height: 12),
-        const TextField(
+        TextFormField(
           obscureText: true,
-          decoration: InputDecoration(labelText: 'Senha'),
+          decoration: const InputDecoration(labelText: 'Senha'),
+          validator: (v) {
+            if (v == null || v.isEmpty) return 'Campo obrigatório';
+            if (v.length < 3) return 'A senha deve ter pelo menos 3 caracteres';
+            return null;
+          },
         ),
       ],
     );
   }
 
-  Widget _buildStepDois() {
+  Widget _formularioPassoDois() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -248,9 +310,10 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
               if (selecionado)
                 Padding(
                   padding: const EdgeInsets.only(left: 8, bottom: 12),
-                  child: TextField(
+                  child: TextFormField(
                     controller: _camposAdicionais[tipo],
                     decoration: InputDecoration(labelText: tipo.textoCampoAdicional),
+                    validator: ValidadoresCamposCadastro.obrigatorio,
                   ),
                 ),
             ],

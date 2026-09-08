@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/instituicao.dart';
-import '../../models/service_order.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/section_title.dart';
+import '../../models/ordem_servico.dart';
+import '../../theme/tema_do_app.dart';
+import '../../widgets/titulo_secao.dart';
 import '../../widgets/card_servicos.dart';
-import '../shared/notifications_screen.dart';
+import '../shared/tela_notificacoes.dart';
 import 'instituicao_tela_novo_servico.dart';
 
 /// Tela inicial da instituição (ÉPICO 02 - US02.2): botão de ação

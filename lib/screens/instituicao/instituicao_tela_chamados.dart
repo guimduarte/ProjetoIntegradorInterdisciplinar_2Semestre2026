@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../models/modelo_aplicacao_de_servico.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/card_aplicacao_de_operario.dart';
+import '../../models/candidatura_de_servico.dart';
+import '../../theme/tema_do_app.dart';
+import '../../widgets/card_candidatura_de_operario.dart';
 
 /// Central de chamados da instituição (ÉPICO 03 - US03.2): lista as
 /// candidaturas recebidas com a visualização restrita do perfil do
@@ -14,7 +14,7 @@ class InstituicaoTelaChamados extends StatefulWidget {
 }
 
 class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
-  final List<AplicacaoDeServico> _applications = mockCandidaturas;
+  final List<CandidaturaDeServico> _applications = mockCandidaturas;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
                   const SizedBox(height: 10),
                   ...pendentes.map((a) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: CardAplicacaoDeOperario(
+                        child: CardCandidaturaDeOperario(
                           candidatura: a,
                           onAceitar: () => _decidir(a, StatusCandidatura.aceita),
                           onRecusar: () => _decidir(a, StatusCandidatura.recusada),
@@ -54,7 +54,7 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
                   const SizedBox(height: 10),
                   ...decididas.map((a) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: CardAplicacaoDeOperario(
+                        child: CardCandidaturaDeOperario(
                           candidatura: a,
                           onAceitar: () {},
                           onRecusar: () {},
@@ -66,7 +66,7 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
     );
   }
 
-  void _decidir(AplicacaoDeServico a, StatusCandidatura status) {
+  void _decidir(CandidaturaDeServico a, StatusCandidatura status) {
     setState(() => a.status = status);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

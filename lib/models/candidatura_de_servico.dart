@@ -1,11 +1,11 @@
-import 'experience_level.dart';
+import 'nivel_experiencia.dart';
 
 enum StatusCandidatura { pendente, aceita, recusada }
 
 /// Candidatura de um operário a um serviço publicado, exibida na
 /// central de chamados da instituição com a visualização restrita do
 /// perfil do operário (ÉPICO 03 - US03.2).
-class AplicacaoDeServico {
+class CandidaturaDeServico {
   final String id;
   final String servicoTitulo;
   final String operarioNome;
@@ -15,7 +15,7 @@ class AplicacaoDeServico {
   final NivelExperiencia nivelExperiencia;
   StatusCandidatura status;
 
-  AplicacaoDeServico({
+  CandidaturaDeServico({
     required this.id,
     required this.servicoTitulo,
     required this.operarioNome,
@@ -27,8 +27,8 @@ class AplicacaoDeServico {
   });
 }
 
-final List<AplicacaoDeServico> mockCandidaturas = [
-  AplicacaoDeServico(
+final List<CandidaturaDeServico> mockCandidaturas = [
+  CandidaturaDeServico(
     id: 'ap1',
     servicoTitulo: 'Pintura do salão comunitário',
     operarioNome: 'Marta Souza',
@@ -37,7 +37,7 @@ final List<AplicacaoDeServico> mockCandidaturas = [
     escopoPrincipal: 'Pintura',
     nivelExperiencia: NivelExperiencia.intermediario,
   ),
-  AplicacaoDeServico(
+  CandidaturaDeServico(
     id: 'ap2',
     servicoTitulo: 'Pintura do salão comunitário',
     operarioNome: 'Felipe Nogueira',
@@ -46,7 +46,7 @@ final List<AplicacaoDeServico> mockCandidaturas = [
     escopoPrincipal: 'Pintura',
     nivelExperiencia: NivelExperiencia.iniciante,
   ),
-  AplicacaoDeServico(
+  CandidaturaDeServico(
     id: 'ap3',
     servicoTitulo: 'Montagem de estantes na biblioteca comunitária',
     operarioNome: 'João Ricardo',

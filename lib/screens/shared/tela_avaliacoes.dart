@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/instituicao.dart';
 import '../../models/operario.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/section_title.dart';
+import '../../theme/tema_do_app.dart';
+import '../../widgets/titulo_secao.dart';
 
 class _Review {
   final String autor;

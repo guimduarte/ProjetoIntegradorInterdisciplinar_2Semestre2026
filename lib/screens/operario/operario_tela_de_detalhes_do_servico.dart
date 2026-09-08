@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../models/experience_level.dart';
-import '../../models/service_order.dart';
-import '../../theme/app_theme.dart';
+import '../../models/nivel_experiencia.dart';
+import '../../models/ordem_servico.dart';
+import '../../theme/tema_do_app.dart';
 import '../../widgets/selo_de_complexidade.dart';
 
 /// Tela de detalhe de um serviço publicado, com opção de candidatura

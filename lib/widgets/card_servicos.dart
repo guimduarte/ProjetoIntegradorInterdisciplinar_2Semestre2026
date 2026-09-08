@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/service_order.dart';
-import '../theme/app_theme.dart';
+import '../models/ordem_servico.dart';
+import '../theme/tema_do_app.dart';
 import 'selo_de_complexidade.dart';
 
 /// Card de serviço exibido no feed do operário (US04.1) e no painel

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../models/service_order.dart';
-import '../../theme/app_theme.dart';
+import '../../models/ordem_servico.dart';
+import '../../theme/tema_do_app.dart';
 import '../../widgets/selo_de_complexidade.dart';
 
 /// Aba "Meus Serviços" do operário, separando chamados 'Aceitos'

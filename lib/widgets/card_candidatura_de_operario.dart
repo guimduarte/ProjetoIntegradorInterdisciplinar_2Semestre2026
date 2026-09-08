@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import '../models/experience_level.dart';
-import '../models/modelo_aplicacao_de_servico.dart';
-import '../theme/app_theme.dart';
+import '../models/nivel_experiencia.dart';
+import '../models/candidatura_de_servico.dart';
+import '../theme/tema_do_app.dart';
 
 /// Card exibido na central de chamados da instituição com a
 /// visualização restrita do perfil do operário candidato: apenas
 /// Nome, E-mail, Telefone, Escopo de Serviço e Nível de Experiência
 /// (US03.2), com ações de Aceitar/Recusar.
-class CardAplicacaoDeOperario extends StatelessWidget {
-  final AplicacaoDeServico candidatura;
+class CardCandidaturaDeOperario extends StatelessWidget {
+  final CandidaturaDeServico candidatura;
   final VoidCallback onAceitar;
   final VoidCallback onRecusar;
 
-  const CardAplicacaoDeOperario({
+  const CardCandidaturaDeOperario({
     super.key,
     required this.candidatura,
     required this.onAceitar,

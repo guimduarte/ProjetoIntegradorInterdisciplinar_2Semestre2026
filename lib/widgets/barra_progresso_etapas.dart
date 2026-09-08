@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../theme/tema_do_app.dart';
 
 /// Indicador visual de progresso para os formulários de cadastro em
 /// duas partes (US01.2 e US01.3: "Parte 1" / "Parte 2").

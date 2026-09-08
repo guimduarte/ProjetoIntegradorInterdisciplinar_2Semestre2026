@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../theme/tema_do_app.dart';
 
 /// Cabeçalho de seção padrão usado nas telas do app, com título e
 /// uma ação opcional ("ver tudo", "filtrar" etc.).

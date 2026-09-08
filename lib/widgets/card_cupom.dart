@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/reward.dart';
-import '../theme/app_theme.dart';
+import '../models/recompensa.dart';
+import '../theme/tema_do_app.dart';
 
 /// Card de cupom exibido na vitrine da Carteira de Benefícios
 /// (US05.2), com o custo em pontos e a opção de resgate.
