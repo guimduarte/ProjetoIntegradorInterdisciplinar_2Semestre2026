@@ -1,0 +1,48 @@
+{
+  "users": [
+    {
+      "perfil": "OPERARIO",
+      "email": "joao.operario@email.com",
+      "telefone": "(11) 99999-1111",
+      "endereco_texto": "Praça Mauá, 1 - São Caetano do Sul",
+      "latitude": -23.6479,
+      "longitude": -46.5742,
+      "nome": "João Silva",
+      "escopo_operario": ["elétrica", "encanador"],
+      "raio_atendimento_km": 10,
+      "nivel_operario": "experiente",
+      "nivel_de_experiencia_sistema": "0+",
+      "quantidade_servicos_realizados": 0
+    },
+    {
+      "perfil": "INSTITUICAO",
+      "email": "contato@ongabc.org.br",
+      "telefone": "(11) 4000-2222",
+      "endereco_texto": "Rua X, 100 - São Bernardo do Campo",
+      "latitude": -23.6938,
+      "longitude": -46.5644,
+      "nome_instituicao": "ONG Acolher ABC",
+      "tipo_entidade": "ONG"
+    }
+  ],
+  "services": [
+    {
+      "titulo": "Conserto de Fiação (Dentro do raio)",
+      "escopo_servico": "elétrica",
+      "complexidade": "Médio",
+      "endereco_texto": "Rua X, 100 - São Bernardo do Campo",
+      "latitude": -23.6938,
+      "longitude": -46.5644,
+      "status_servico": "ABERTO"
+    },
+    {
+      "titulo": "Manutenção de Encanamento (Fora do raio)",
+      "escopo_servico": "encanador",
+      "complexidade": "Fácil",
+      "endereco_texto": "Praça da Sé - São Paulo",
+      "latitude": -23.5505,
+      "longitude": -46.6333,
+      "status_servico": "ABERTO"
+    }
+  ]
+}

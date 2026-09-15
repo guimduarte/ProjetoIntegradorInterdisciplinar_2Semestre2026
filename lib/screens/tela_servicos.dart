@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/profissional.dart';
 import '../theme/tema_do_app.dart';
 import '../widgets/card_profissional.dart';
+import '../utils/location_utils.dart';
 
 /// Tela que lista os profissionais/serviços disponíveis, com
 /// filtro por categoria e opção de solicitar atendimento.
@@ -25,13 +26,30 @@ class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
 
   late String _categoriaSelecionada = widget.categoriaInicial;
 
-  List<Profissional> get _profissionaisFiltrados {
-    if (_categoriaSelecionada == 'Todos') return mockProfissionais;
-    return mockProfissionais
-        .where((p) => p.especialidade.toLowerCase().contains(
-              _categoriaSelecionada.toLowerCase().substring(0, 5),
-            ))
-        .toList();
+  List get _profissionaisFiltrados {
+    // 1. Simulando a localização da Instituição (ONG Acolher ABC)
+    const double minhaLatitude = -23.6938;
+    const double minhaLongitude = -46.5644;
+    const double raioMaximoKm = 15.0; // Raio de busca de 15km
+
+    return mockProfissionais.where((p) {
+      // 2. Filtro de Categoria (o seu original)
+      final categoriaBate = _categoriaSelecionada == 'Todos' ||
+          p.especialidade.toLowerCase().contains(
+                _categoriaSelecionada.toLowerCase().substring(0, 5),
+              );
+
+      // 3. Filtro de Distância (Haversine)
+      final distancia = calcularDistancia(
+        minhaLatitude,
+        minhaLongitude,
+        p.latitude,  
+        p.longitude, 
+      );
+
+      // 4. Retorna true só se bater a categoria E a distância
+      return categoriaBate && (distancia <= raioMaximoKm);
+    }).toList();
   }
 
   @override
