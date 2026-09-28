@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../models/operario.dart';
+import '../../services/servico_autenticacao.dart';
 import '../../theme/tema_do_app.dart';
 import '../../utils/validadores_campos_cadastro.dart';
 import '../../widgets/barra_progresso_etapas.dart';
+import '../../widgets/dialogo_confirmacao_codigo.dart';
 import '../operario/operario_tela.dart';
 
 /// Tela de autenticação do usuário 'Operário' (ÉPICO 01 - US01.2):
-/// login simples ou cadastro completo em duas etapas (dados pessoais
-/// e perfil profissional). Interface apenas — sem chamadas a backend.
+/// login e cadastro em duas etapas integrado com AWS Amplify.
 class TelaAutenticacaoOperario extends StatefulWidget {
   const TelaAutenticacaoOperario({super.key});
 
   @override
-  State<TelaAutenticacaoOperario> createState() => _TelaAutenticacaoOperarioState();
+  State<TelaAutenticacaoOperario> createState() =>
+      _TelaAutenticacaoOperarioState();
 }
 
-class _TelaAutenticacaoOperarioState extends State<TelaAutenticacaoOperario> with SingleTickerProviderStateMixin {
-  late final TabController _tabController = TabController(length: 2, vsync: this);
+class _TelaAutenticacaoOperarioState extends State<TelaAutenticacaoOperario>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController =
+      TabController(length: 2, vsync: this);
 
   @override
-  void dispose() { // mét.odo usado para liberar recursos usado por esse tabcontroler (funcao do proprio Flutter)
+  void dispose() {
     _tabController.dispose();
     super.dispose();
   }
@@ -34,7 +38,7 @@ class _TelaAutenticacaoOperarioState extends State<TelaAutenticacaoOperario> wit
           controller: _tabController,
           tabs: const [Tab(text: 'Entrar'), Tab(text: 'Cadastrar')],
           labelColor: CoresApp.branco,
-          unselectedLabelColor: Color(0xFFB9C3D6),
+          unselectedLabelColor: const Color(0xFFB9C3D6),
           indicatorColor: CoresApp.branco,
         ),
       ),
@@ -53,11 +57,67 @@ class _OperarioLoginFormulario extends StatefulWidget {
   const _OperarioLoginFormulario();
 
   @override
-  State<_OperarioLoginFormulario> createState() => _OperarioLoginFormularioState();
+  State<_OperarioLoginFormulario> createState() =>
+      _OperarioLoginFormularioState();
 }
 
 class _OperarioLoginFormularioState extends State<_OperarioLoginFormulario> {
   final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _senhaController = TextEditingController();
+  final _servicoAuth = ServicoAutenticacao.instancia;
+
+  bool _carregandoLogin = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _senhaController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _processarLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final messengerContext = ScaffoldMessenger.of(context);
+    final navContext = Navigator.of(context);
+
+    setState(() => _carregandoLogin = true);
+
+    final resultado = await _servicoAuth.fazerLogin(
+      email: _emailController.text,
+      senha: _senhaController.text,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _carregandoLogin = false);
+
+    if (resultado.sucesso) {
+      navContext.pushReplacement(
+        MaterialPageRoute(builder: (_) => const OperarioTela()),
+      );
+    } else if (resultado.requerConfirmacaoCodigo) {
+      final confirmouCodigo = await DialogoConfirmacaoCodigo.exibir(
+        contexto: context,
+        emailUsuario: _emailController.text.trim(),
+      );
+
+      if (confirmouCodigo == true && mounted) {
+        navContext.pushReplacement(
+          MaterialPageRoute(builder: (_) => const OperarioTela()),
+        );
+      }
+    } else {
+      messengerContext.showSnackBar(
+        SnackBar(
+          content: Text(
+              resultado.mensagemErro ?? 'Erro ao realizar login no sistema.'),
+          backgroundColor: CoresApp.vermelhoEscuro,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,12 +138,15 @@ class _OperarioLoginFormularioState extends State<_OperarioLoginFormulario> {
             ),
             const SizedBox(height: 20),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'E-mail', hintText: 'seuemail@exemplo.com'),
+              controller: _emailController,
+              decoration: const InputDecoration(
+                  labelText: 'E-mail', hintText: 'seuemail@exemplo.com'),
               validator: ValidadoresCamposCadastro.email,
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 12),
             TextFormField(
+              controller: _senhaController,
               obscureText: true,
               decoration: const InputDecoration(labelText: 'Senha'),
               validator: ValidadoresCamposCadastro.obrigatorio,
@@ -92,14 +155,17 @@ class _OperarioLoginFormularioState extends State<_OperarioLoginFormulario> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const OperarioTela()),
-                    );
-                  }
-                },
-                child: const Text('Entrar'),
+                onPressed: _carregandoLogin ? null : _processarLogin,
+                child: _carregandoLogin
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: CoresApp.branco,
+                        ),
+                      )
+                    : const Text('Entrar'),
               ),
             ),
           ],
@@ -113,13 +179,18 @@ class _OperarioCadastroFormulario extends StatefulWidget {
   const _OperarioCadastroFormulario();
 
   @override
-  State<_OperarioCadastroFormulario> createState() => _OperarioCadastroFormularioState();
+  State<_OperarioCadastroFormulario> createState() =>
+      _OperarioCadastroFormularioState();
 }
 
-class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario> {
+class _OperarioCadastroFormularioState
+    extends State<_OperarioCadastroFormulario> {
   int _step = 0;
   final _formKeyUm = GlobalKey<FormState>();
   final _formKeyDois = GlobalKey<FormState>();
+  final _servicoAuth = ServicoAutenticacao.instancia;
+
+  bool _carregandoCadastro = false;
 
   final _cpfMask = MaskTextInputFormatter(
     mask: '###.###.###-##',
@@ -136,6 +207,7 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
   final _telefoneController = TextEditingController();
   final _cpfController = TextEditingController();
   final _localizacaoController = TextEditingController();
+  final _senhaController = TextEditingController();
 
   // Parte 2 — Perfil profissional
   bool _portfolioAnexado = false;
@@ -151,8 +223,90 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
     _telefoneController.dispose();
     _cpfController.dispose();
     _localizacaoController.dispose();
+    _senhaController.dispose();
     _experienciasController.dispose();
     super.dispose();
+  }
+
+  Future<void> _finalizarCadastro(BuildContext context) async {
+    if (!_formKeyDois.currentState!.validate()) return;
+
+    final navContext = Navigator.of(context);
+    final scaffoldContext = ScaffoldMessenger.of(context);
+
+    setState(() => _carregandoCadastro = true);
+
+    // 1. Criar usuário no Cognito
+    final resultadoCognito = await _servicoAuth.cadastrarUsuarioCognito(
+      email: _emailController.text,
+      senha: _senhaController.text,
+    );
+
+    if (!mounted) return;
+
+    if (!resultadoCognito.sucesso) {
+      setState(() => _carregandoCadastro = false);
+      scaffoldContext.showSnackBar(
+        SnackBar(
+          content: Text(resultadoCognito.mensagemErro ??
+              'Erro ao realizar cadastro no sistema.'),
+          backgroundColor: CoresApp.vermelhoEscuro,
+        ),
+      );
+      return;
+    }
+
+    // 2. Exibir diálogo de confirmação do código recebido por e-mail
+    bool emailConfirmado = true;
+    if (resultadoCognito.requerConfirmacaoCodigo) {
+      if (!mounted) return;
+      final confirmou = await DialogoConfirmacaoCodigo.exibir(
+        contexto: context,
+        emailUsuario: _emailController.text.trim(),
+      );
+      emailConfirmado = confirmou == true;
+    }
+
+    if (!emailConfirmado || !mounted) {
+      setState(() => _carregandoCadastro = false);
+      return;
+    }
+
+    // 3. Fazer login temporário para estabelecer sessão autenticada no AppSync
+    await _servicoAuth.fazerLogin(
+      email: _emailController.text,
+      senha: _senhaController.text,
+    );
+
+    // 4. Salvar dados completos do perfil na tabela User do AppSync GraphQL
+    await _servicoAuth.salvarPerfilUsuarioNoBanco(
+      perfil: 'operario',
+      email: _emailController.text.trim(),
+      telefone: _telefoneController.text.trim(),
+      enderecoTexto: _localizacaoController.text.trim(),
+      nome: _nomeController.text.trim(),
+      cpf: _cpfController.text.trim(),
+      escopoOperario: _escoposSelecionados.toList(),
+      nivelOperario: _nivelDeclarado.toString(),
+      quantidadeServicosRealizados: _nivelDeclarado,
+      raioAtendimentoKm: _raioKm.round(),
+      experienciasAnteriores: _experienciasController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    setState(() => _carregandoCadastro = false);
+
+    scaffoldContext.showSnackBar(
+      const SnackBar(
+        content: Text('Cadastro de operário concluído com sucesso!'),
+        backgroundColor: CoresApp.verdeSucesso,
+      ),
+    );
+
+    navContext.pushReplacement(
+      MaterialPageRoute(builder: (_) => const OperarioTela()),
+    );
   }
 
   @override
@@ -182,7 +336,9 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
               if (_step == 1)
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => setState(() => _step = 0),
+                    onPressed: _carregandoCadastro
+                        ? null
+                        : () => setState(() => _step = 0),
                     child: const Text('Voltar'),
                   ),
                 ),
@@ -190,18 +346,27 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_step == 0) {
-                      if (_formKeyUm.currentState!.validate()) {
-                        setState(() => _step = 1);
-                      }
-                    } else {
-                      if (_formKeyDois.currentState!.validate()) {
-                        _finalizarCadastro(context);
-                      }
-                    }
-                  },
-                  child: Text(_step == 0 ? 'Continuar' : 'Concluir cadastro'),
+                  onPressed: _carregandoCadastro
+                      ? null
+                      : () {
+                          if (_step == 0) {
+                            if (_formKeyUm.currentState!.validate()) {
+                              setState(() => _step = 1);
+                            }
+                          } else {
+                            _finalizarCadastro(context);
+                          }
+                        },
+                  child: _carregandoCadastro
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: CoresApp.branco,
+                          ),
+                        )
+                      : Text(_step == 0 ? 'Continuar' : 'Concluir cadastro'),
                 ),
               ),
             ],
@@ -233,7 +398,8 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
         const SizedBox(height: 12),
         TextFormField(
           controller: _telefoneController,
-          decoration: const InputDecoration(labelText: 'Telefone', hintText: '(00) 00000-0000'),
+          decoration: const InputDecoration(
+              labelText: 'Telefone', hintText: '(00) 00000-0000'),
           validator: ValidadoresCamposCadastro.telefone,
           inputFormatters: [_telefoneMask],
           keyboardType: TextInputType.phone,
@@ -241,7 +407,8 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
         const SizedBox(height: 12),
         TextFormField(
           controller: _cpfController,
-          decoration: const InputDecoration(labelText: 'CPF', hintText: '000.000.000-00'),
+          decoration: const InputDecoration(
+              labelText: 'CPF', hintText: '000.000.000-00'),
           validator: ValidadoresCamposCadastro.cpf,
           inputFormatters: [_cpfMask],
           keyboardType: TextInputType.number,
@@ -249,16 +416,21 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
         const SizedBox(height: 12),
         TextFormField(
           controller: _localizacaoController,
-          decoration: const InputDecoration(labelText: 'Localização de referência'),
+          decoration:
+              const InputDecoration(labelText: 'Localização de referência'),
           validator: ValidadoresCamposCadastro.obrigatorio,
         ),
         const SizedBox(height: 12),
         TextFormField(
+          controller: _senhaController,
           obscureText: true,
-          decoration: const InputDecoration(labelText: 'Senha de acesso'),
+          decoration: const InputDecoration(
+            labelText: 'Senha de acesso',
+            hintText: 'Mínimo 8 caracteres (A-z, 0-9, !@#)',
+          ),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Campo obrigatório';
-            if (v.length < 3) return 'A senha deve ter pelo menos 3 caracteres';
+            if (v.length < 8) return 'A senha deve ter no mínimo 8 caracteres';
             return null;
           },
         ),
@@ -282,19 +454,27 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
               color: _portfolioAnexado ? CoresApp.verdeFundo : CoresApp.branco,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: _portfolioAnexado ? CoresApp.verdeSucesso : CoresApp.borda,
+                color:
+                    _portfolioAnexado ? CoresApp.verdeSucesso : CoresApp.borda,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  _portfolioAnexado ? Icons.check_circle_rounded : Icons.upload_file_rounded,
-                  color: _portfolioAnexado ? CoresApp.verdeSucesso : CoresApp.textoSecundario,
+                  _portfolioAnexado
+                      ? Icons.check_circle_rounded
+                      : Icons.upload_file_rounded,
+                  color: _portfolioAnexado
+                      ? CoresApp.verdeSucesso
+                      : CoresApp.textoSecundario,
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  _portfolioAnexado ? 'Portfólio anexado' : 'Anexar portfólio (fotos de trabalhos)',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  _portfolioAnexado
+                      ? 'Portfólio anexado'
+                      : 'Anexar portfólio (fotos de trabalhos)',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -324,11 +504,14 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
               label: Text(escopo, style: const TextStyle(fontSize: 11)),
               selected: selected,
               onSelected: (v) => setState(() {
-                v ? _escoposSelecionados.add(escopo) : _escoposSelecionados.remove(escopo);
+                v
+                    ? _escoposSelecionados.add(escopo)
+                    : _escoposSelecionados.remove(escopo);
               }),
               selectedColor: CoresApp.vermelhoFundo,
               checkmarkColor: CoresApp.vermelhoAcao,
-              side: BorderSide(color: selected ? CoresApp.vermelhoAcao : CoresApp.borda),
+              side: BorderSide(
+                  color: selected ? CoresApp.vermelhoAcao : CoresApp.borda),
             );
           }).toList(),
         ),
@@ -367,15 +550,6 @@ class _OperarioCadastroFormularioState extends State<_OperarioCadastroFormulario
       title: Text(label, style: const TextStyle(fontSize: 12)),
       dense: true,
       contentPadding: EdgeInsets.zero,
-    );
-  }
-
-  void _finalizarCadastro(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cadastro de operário concluído com sucesso!')),
-    );
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const OperarioTela()),
     );
   }
 }

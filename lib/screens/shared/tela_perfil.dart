@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/instituicao.dart';
 import '../../models/operario.dart';
+import '../../services/servico_autenticacao.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/titulo_secao.dart';
 import '../tela_selecao_tipo_usuario.dart';
@@ -14,12 +15,22 @@ class TelaPerfil extends StatelessWidget {
 
   const TelaPerfil({super.key, required this.ehInstituicao});
 
+  Future<void> _fazerLogoutESair(BuildContext context) async {
+    await ServicoAutenticacao.instancia.fazerLogout();
+    if (!context.mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const TelaSelecaoTipoUsuario()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Editar Perfil'),
-          automaticallyImplyLeading: false, //desativar a seta de voltar da topbar
+        title: const Text('Editar Perfil'),
+        automaticallyImplyLeading: false, // desativar a seta de voltar da topbar
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -49,7 +60,14 @@ class TelaPerfil extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Alterações salvas com sucesso!'),
+                    backgroundColor: CoresApp.verdeSucesso,
+                  ),
+                );
+              },
               child: const Text('Salvar alterações'),
             ),
           ),
@@ -57,10 +75,7 @@ class TelaPerfil extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const TelaSelecaoTipoUsuario()),
-                (route) => false,
-              ),
+              onPressed: () => _fazerLogoutESair(context),
               icon: const Icon(Icons.logout_rounded, size: 18),
               label: const Text('Sair'),
               style: OutlinedButton.styleFrom(
@@ -107,7 +122,10 @@ class TelaPerfil extends StatelessWidget {
                 ),
                 child: Text(
                   subtitulo,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: CoresApp.vermelhoEscuro),
+                  style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: CoresApp.vermelhoEscuro),
                 ),
               ),
             ],

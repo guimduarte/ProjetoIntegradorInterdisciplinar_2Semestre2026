@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'services/servico_autenticacao.dart';
 import 'screens/tela_selecao_tipo_usuario.dart';
 import 'theme/tema_do_app.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicialização do AWS Amplify (Cognito + AppSync GraphQL)
+  try {
+    await ServicoAutenticacao.instancia.inicializarAmplify();
+  } catch (erro) {
+    debugPrint('Erro ao inicializar serviços AWS Amplify: $erro');
+  }
+
   runApp(const MaosSolidariasApp());
 }
 
