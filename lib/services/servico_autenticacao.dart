@@ -22,7 +22,9 @@ class ResultadoAutenticacao {
 /// Serviço responsável pela integração completa com o AWS Amplify
 /// (Cognito para autenticação e AppSync/GraphQL para banco de dados).
 class ServicoAutenticacao {
+  //Isso é um construtor privado. o "_" é o nome dele. Em dart, é possível ter construtores nomeados, e o nome vc coloca após o "."
   ServicoAutenticacao._();
+  //A razão dessa linha acima e abaixo é fazer com que haja apenas uma instância de ServicoAutenticacao no código inteiro.
   static final ServicoAutenticacao instancia = ServicoAutenticacao._();
 
   bool _amplifyInicializado = false;
@@ -47,7 +49,8 @@ class ServicoAutenticacao {
 
       _amplifyInicializado = true;
       safePrint('AWS Amplify configurado com sucesso!');
-    } catch (erro) {
+    }
+    catch (erro) {
       safePrint('Erro ao inicializar AWS Amplify: $erro');
       rethrow;
     }
@@ -60,14 +63,15 @@ class ServicoAutenticacao {
       if (sessao.isSignedIn) {
         return await Amplify.Auth.getCurrentUser();
       }
-    } catch (erro) {
+    }
+    catch (erro) {
       safePrint('Erro ao verificar sessão ativa: $erro');
     }
     return null;
   }
 
   /// Inicia o processo de cadastro do usuário no AWS Cognito (E-mail e Senha).
-  Future<ResultadoAutenticacao> cadastrarUsuarioCognito({
+  Future<ResultadoAutenticacao> cadastrarUsuarioCognito({ //Essas chaves significam apenas que esses dois parâmetros são nomeados.
     required String email,
     required String senha,
   }) async {
@@ -95,9 +99,10 @@ class ServicoAutenticacao {
         sucesso: false,
         mensagemErro: _traduzirMensagemErroAuth(erro.message),
       );
-    } catch (erro) {
+    }
+    catch (erro) {
       safePrint('Erro inesperado no cadastro: $erro');
-      return ResultadoAutenticacao(
+      return const ResultadoAutenticacao(
         sucesso: false,
         mensagemErro: 'Erro inesperado ao realizar cadastro. Tente novamente.',
       );
@@ -127,8 +132,9 @@ class ServicoAutenticacao {
         sucesso: false,
         mensagemErro: _traduzirMensagemErroAuth(erro.message),
       );
-    } catch (erro) {
-      return ResultadoAutenticacao(
+    }
+    catch (erro) {
+      return const ResultadoAutenticacao(
         sucesso: false,
         mensagemErro: 'Erro ao validar código. Tente novamente.',
       );
@@ -140,7 +146,8 @@ class ServicoAutenticacao {
     try {
       await Amplify.Auth.resendSignUpCode(username: email.trim());
       return true;
-    } catch (erro) {
+    }
+    catch (erro) {
       safePrint('Erro ao reenviar código: $erro');
       return false;
     }
@@ -186,8 +193,9 @@ class ServicoAutenticacao {
         sucesso: false,
         mensagemErro: _traduzirMensagemErroAuth(erro.message),
       );
-    } catch (erro) {
-      return ResultadoAutenticacao(
+    }
+    catch (erro) {
+      return const ResultadoAutenticacao(
         sucesso: false,
         mensagemErro: 'Erro inesperado ao fazer login. Tente novamente.',
       );
@@ -195,7 +203,7 @@ class ServicoAutenticacao {
   }
 
   /// Salva os dados completos do usuário na tabela `User` do AppSync GraphQL.
-  Future<bool> salvarPerfilUsuarioNoBanco({
+  Future<bool> salvarPerfilUsuarioNoBanco({ //Essas chaves significam apenas que esses vários parâmetros são nomeados.
     required String perfil, // 'operario' ou 'instituicao'
     required String email,
     required String telefone,
@@ -224,6 +232,13 @@ class ServicoAutenticacao {
         }
       ''';
 
+      /*
+      ---------------------IMPORTANTE---------------------
+      Observação importante: isto, abaixo, não é necessariamente uma forma robusta de gerar
+      IDs únicos em um sistema distribuído, porque duasexecuções podem ocorrer
+      no mesmo milissegundo. Se o backend já gera IDs, normalmente
+      seria preferível deixar o backend fazer isso.
+      */
       final idUnico = DateTime.now().millisecondsSinceEpoch.toString();
 
       final dadosEntradaMap = <String, dynamic>{
@@ -264,7 +279,8 @@ class ServicoAutenticacao {
 
       safePrint('Perfil de usuário salvo no banco de dados com sucesso!');
       return true;
-    } catch (erro) {
+    }
+    catch (erro) {
       safePrint('Erro ao salvar perfil no banco de dados: $erro');
       return false;
     }
@@ -318,7 +334,8 @@ class ServicoAutenticacao {
       if (itens != null && itens.isNotEmpty) {
         return itens.first as Map<String, dynamic>;
       }
-    } catch (erro) {
+    }
+    catch (erro) {
       safePrint('Erro ao obter perfil por e-mail: $erro');
     }
     return null;
@@ -329,7 +346,8 @@ class ServicoAutenticacao {
     try {
       await Amplify.Auth.signOut();
       safePrint('Logout realizado com sucesso.');
-    } catch (erro) {
+    }
+    catch (erro) {
       safePrint('Erro ao fazer logout: $erro');
     }
   }
