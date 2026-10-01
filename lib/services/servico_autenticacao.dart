@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_api/amplify_api.dart';
+import 'package:amplify_storage_s3/amplify_storage_s3.dart';
+import 'gerenciador_sessao_usuario.dart';
 
 /// Classe que encapsula o resultado das operações de cadastro e login.
 class ResultadoAutenticacao {
@@ -20,7 +23,7 @@ class ResultadoAutenticacao {
 }
 
 /// Serviço responsável pela integração completa com o AWS Amplify
-/// (Cognito para autenticação e AppSync/GraphQL para banco de dados).
+/// (Cognito para autenticação, AppSync/GraphQL para banco de dados e S3 para arquivos).
 class ServicoAutenticacao {
   ServicoAutenticacao._();
   static final ServicoAutenticacao instancia = ServicoAutenticacao._();
@@ -28,7 +31,8 @@ class ServicoAutenticacao {
   bool _amplifyInicializado = false;
   bool get amplifyInicializado => _amplifyInicializado;
 
-  /// Inicializa os plugins do AWS Amplify com as configurações do `amplify_outputs.json`.
+  /// Inicializa os plugins do AWS Amplify (Auth, API GraphQL e Storage S3)
+  /// com as configurações do `amplify_outputs.json`.
   Future<void> inicializarAmplify() async {
     if (_amplifyInicializado || Amplify.isConfigured) {
       _amplifyInicializado = true;
@@ -38,15 +42,16 @@ class ServicoAutenticacao {
     try {
       final pluginAuth = AmplifyAuthCognito();
       final pluginApi = AmplifyAPI();
+      final pluginStorage = AmplifyStorageS3();
 
-      await Amplify.addPlugins([pluginAuth, pluginApi]);
+      await Amplify.addPlugins([pluginAuth, pluginApi, pluginStorage]);
 
       final stringConfiguracaoOutputs =
           await rootBundle.loadString('amplify_outputs.json');
       await Amplify.configure(stringConfiguracaoOutputs);
 
       _amplifyInicializado = true;
-      safePrint('AWS Amplify configurado com sucesso!');
+      safePrint('AWS Amplify configurado com sucesso (Auth, API, Storage)!');
     } catch (erro) {
       safePrint('Erro ao inicializar AWS Amplify: $erro');
       rethrow;
@@ -64,6 +69,39 @@ class ServicoAutenticacao {
       safePrint('Erro ao verificar sessão ativa: $erro');
     }
     return null;
+  }
+
+  /// Carrega os dados reais do perfil do usuário autenticado no Cognito
+  /// buscando o mapa no GraphQL AppSync e registrando no [GerenciadorSessaoUsuario].
+  Future<String?> carregarPerfilUsuarioLogado() async {
+    try {
+      final usuarioCognito = await obterUsuarioAtualLogado();
+      if (usuarioCognito == null) return null;
+
+      final emailUsuario = usuarioCognito.username;
+      final mapaUsuario = await obterPerfilUsuarioPorEmail(emailUsuario);
+
+      if (mapaUsuario == null) return null;
+
+      final perfilTipo = mapaUsuario['perfil'] as String?;
+
+      if (perfilTipo == 'operario') {
+        final perfilOperario =
+            GerenciadorSessaoUsuario.converterMapParaOperario(mapaUsuario);
+        GerenciadorSessaoUsuario.instancia
+            .definirOperarioLogado(perfilOperario);
+      } else if (perfilTipo == 'instituicao') {
+        final perfilInstituicao =
+            GerenciadorSessaoUsuario.converterMapParaInstituicao(mapaUsuario);
+        GerenciadorSessaoUsuario.instancia
+            .definirInstituicaoLogada(perfilInstituicao);
+      }
+
+      return perfilTipo;
+    } catch (erro) {
+      safePrint('Erro ao carregar perfil do usuário logado: $erro');
+      return null;
+    }
   }
 
   /// Inicia o processo de cadastro do usuário no AWS Cognito (E-mail e Senha).
@@ -97,7 +135,7 @@ class ServicoAutenticacao {
       );
     } catch (erro) {
       safePrint('Erro inesperado no cadastro: $erro');
-      return ResultadoAutenticacao(
+      return const ResultadoAutenticacao(
         sucesso: false,
         mensagemErro: 'Erro inesperado ao realizar cadastro. Tente novamente.',
       );
@@ -128,7 +166,7 @@ class ServicoAutenticacao {
         mensagemErro: _traduzirMensagemErroAuth(erro.message),
       );
     } catch (erro) {
-      return ResultadoAutenticacao(
+      return const ResultadoAutenticacao(
         sucesso: false,
         mensagemErro: 'Erro ao validar código. Tente novamente.',
       );
@@ -158,9 +196,8 @@ class ServicoAutenticacao {
       );
 
       if (resultado.isSignedIn) {
-        // Busca o perfil do usuário no AppSync GraphQL para saber se é Operário ou Instituição
-        final perfil = await obterPerfilUsuarioPorEmail(email.trim());
-        final tipoPerfil = perfil?['perfil'] as String?;
+        // Busca e popula os dados reais do perfil no GerenciadorSessaoUsuario
+        final tipoPerfil = await carregarPerfilUsuarioLogado();
 
         return ResultadoAutenticacao(
           sucesso: true,
@@ -187,10 +224,46 @@ class ServicoAutenticacao {
         mensagemErro: _traduzirMensagemErroAuth(erro.message),
       );
     } catch (erro) {
-      return ResultadoAutenticacao(
+      return const ResultadoAutenticacao(
         sucesso: false,
         mensagemErro: 'Erro inesperado ao fazer login. Tente novamente.',
       );
+    }
+  }
+
+  /// Envia um arquivo de portfólio (PDF, Word, Imagem) para a pasta `portfolios/*` do Amazon S3 Storage.
+  /// Compatível com Flutter Web, Android, iOS e Desktop.
+  Future<String?> enviarArquivoPortfolioParaS3({
+    required String nomeOriginalArquivo,
+    String? caminhoArquivoLocal,
+    Uint8List? bytesArquivo,
+  }) async {
+    try {
+      final nomeUnico =
+          '${DateTime.now().millisecondsSinceEpoch}_$nomeOriginalArquivo';
+      final caminhoS3 = 'portfolios/$nomeUnico';
+
+      AWSFile awsFile;
+      if (bytesArquivo != null) {
+        awsFile = AWSFile.fromData(bytesArquivo);
+      } else if (caminhoArquivoLocal != null && caminhoArquivoLocal.isNotEmpty) {
+        awsFile = AWSFile.fromPath(caminhoArquivoLocal);
+      } else {
+        safePrint('Aviso: Nenhum dado de arquivo (bytes ou caminho) fornecido.');
+        return null;
+      }
+
+      final resultadoUpload = await Amplify.Storage.uploadFile(
+        localFile: awsFile,
+        path: StoragePath.fromString(caminhoS3),
+      ).result.timeout(const Duration(seconds: 25));
+
+      safePrint(
+          'Arquivo de portfólio enviado para o S3 com sucesso: ${resultadoUpload.uploadedItem.path}');
+      return resultadoUpload.uploadedItem.path;
+    } catch (erro) {
+      safePrint('Erro ao fazer upload do portfólio no Amazon S3: $erro');
+      return null;
     }
   }
 
@@ -207,6 +280,7 @@ class ServicoAutenticacao {
     int? quantidadeServicosRealizados,
     int? raioAtendimentoKm,
     String? experienciasAnteriores,
+    String? portfolioUrl,
     String? nomeInstituicao,
     String? cnpj,
     String? tipoEntidade,
@@ -220,6 +294,7 @@ class ServicoAutenticacao {
             email
             nome
             nome_instituicao
+            portfolio_url
           }
         }
       ''';
@@ -243,6 +318,8 @@ class ServicoAutenticacao {
           'raio_atendimento_km': raioAtendimentoKm,
         if (experienciasAnteriores != null && experienciasAnteriores.isNotEmpty)
           'experiencias_anteriores': experienciasAnteriores,
+        if (portfolioUrl != null && portfolioUrl.isNotEmpty)
+          'portfolio_url': portfolioUrl,
         if (nomeInstituicao != null && nomeInstituicao.isNotEmpty)
           'nome_instituicao': nomeInstituicao,
         if (cnpj != null && cnpj.isNotEmpty) 'cnpj': cnpj,
@@ -253,19 +330,28 @@ class ServicoAutenticacao {
       final requisicaoGraphQL = GraphQLRequest<String>(
         document: mutacaoCriarUsuarioGraphQL,
         variables: {'input': dadosEntradaMap},
+        authorizationMode: APIAuthorizationType.apiKey,
       );
 
-      final resposta = await Amplify.API.mutate(request: requisicaoGraphQL).response;
+      final resposta = await Amplify.API
+          .mutate(request: requisicaoGraphQL)
+          .response
+          .timeout(const Duration(seconds: 15));
 
       if (resposta.hasErrors) {
-        safePrint('Erros no GraphQL ao salvar usuário: ${resposta.errors}');
+        safePrint(
+            'Erros no GraphQL ao salvar usuário no DynamoDB: ${resposta.errors}');
         return false;
       }
 
-      safePrint('Perfil de usuário salvo no banco de dados com sucesso!');
+      safePrint('Perfil de usuário salvo no banco de dados DynamoDB com sucesso!');
+
+      // Carrega o perfil recém-criado na sessão ativa
+      await carregarPerfilUsuarioLogado();
+
       return true;
     } catch (erro) {
-      safePrint('Erro ao salvar perfil no banco de dados: $erro');
+      safePrint('Erro ao salvar perfil no banco de dados DynamoDB: $erro');
       return false;
     }
   }
@@ -291,6 +377,7 @@ class ServicoAutenticacao {
               quantidade_servicos_realizados
               tipo_entidade
               experiencias_anteriores
+              portfolio_url
             }
           }
         }
@@ -303,9 +390,13 @@ class ServicoAutenticacao {
             'email': {'eq': email.trim()}
           }
         },
+        authorizationMode: APIAuthorizationType.apiKey,
       );
 
-      final resposta = await Amplify.API.query(request: requisicaoGraphQL).response;
+      final resposta = await Amplify.API
+          .query(request: requisicaoGraphQL)
+          .response
+          .timeout(const Duration(seconds: 10));
 
       if (resposta.hasErrors || resposta.data == null) {
         safePrint('Erros ao buscar usuário por e-mail: ${resposta.errors}');
@@ -328,6 +419,7 @@ class ServicoAutenticacao {
   Future<void> fazerLogout() async {
     try {
       await Amplify.Auth.signOut();
+      GerenciadorSessaoUsuario.instancia.limparSessao();
       safePrint('Logout realizado com sucesso.');
     } catch (erro) {
       safePrint('Erro ao fazer logout: $erro');
