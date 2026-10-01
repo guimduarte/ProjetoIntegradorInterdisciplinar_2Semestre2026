@@ -25,7 +25,9 @@ class ResultadoAutenticacao {
 /// Serviço responsável pela integração completa com o AWS Amplify
 /// (Cognito para autenticação, AppSync/GraphQL para banco de dados e S3 para arquivos).
 class ServicoAutenticacao {
+  //Isso é um construtor privado. o "_" é o nome dele. Em dart, é possível ter construtores nomeados, e o nome vc coloca após o "."
   ServicoAutenticacao._();
+  //A razão dessa linha acima e abaixo é fazer com que haja apenas uma instância de ServicoAutenticacao no código inteiro.
   static final ServicoAutenticacao instancia = ServicoAutenticacao._();
 
   bool _amplifyInicializado = false;
@@ -51,7 +53,7 @@ class ServicoAutenticacao {
       await Amplify.configure(stringConfiguracaoOutputs);
 
       _amplifyInicializado = true;
-      safePrint('AWS Amplify configurado com sucesso (Auth, API, Storage)!');
+      safePrint('AWS Amplify configurado com sucesso!');
     } catch (erro) {
       safePrint('Erro ao inicializar AWS Amplify: $erro');
       rethrow;
@@ -166,7 +168,7 @@ class ServicoAutenticacao {
         mensagemErro: _traduzirMensagemErroAuth(erro.message),
       );
     } catch (erro) {
-      return const ResultadoAutenticacao(
+      return ResultadoAutenticacao(
         sucesso: false,
         mensagemErro: 'Erro ao validar código. Tente novamente.',
       );
@@ -224,7 +226,7 @@ class ServicoAutenticacao {
         mensagemErro: _traduzirMensagemErroAuth(erro.message),
       );
     } catch (erro) {
-      return const ResultadoAutenticacao(
+      return ResultadoAutenticacao(
         sucesso: false,
         mensagemErro: 'Erro inesperado ao fazer login. Tente novamente.',
       );
@@ -299,6 +301,13 @@ class ServicoAutenticacao {
         }
       ''';
 
+      /*
+      ---------------------IMPORTANTE---------------------
+      Observação importante: isto, abaixo, não é necessariamente uma forma robusta de gerar
+      IDs únicos em um sistema distribuído, porque duasexecuções podem ocorrer
+      no mesmo milissegundo. Se o backend já gera IDs, normalmente
+      seria preferível deixar o backend fazer isso.
+      */
       final idUnico = DateTime.now().millisecondsSinceEpoch.toString();
 
       final dadosEntradaMap = <String, dynamic>{
@@ -351,7 +360,7 @@ class ServicoAutenticacao {
 
       return true;
     } catch (erro) {
-      safePrint('Erro ao salvar perfil no banco de dados DynamoDB: $erro');
+      safePrint('Erro ao salvar perfil no banco de dados: $erro');
       return false;
     }
   }
