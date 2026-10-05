@@ -286,6 +286,8 @@ class ServicoAutenticacao {
     String? nomeInstituicao,
     String? cnpj,
     String? tipoEntidade,
+    double? latitude, //novos
+    double? longitude, //novos
   }) async {
     try {
       const mutacaoCriarUsuarioGraphQL = '''
@@ -297,6 +299,8 @@ class ServicoAutenticacao {
             nome
             nome_instituicao
             portfolio_url
+            latitude
+            longitude
           }
         }
       ''';
@@ -334,6 +338,8 @@ class ServicoAutenticacao {
         if (cnpj != null && cnpj.isNotEmpty) 'cnpj': cnpj,
         if (tipoEntidade != null && tipoEntidade.isNotEmpty)
           'tipo_entidade': tipoEntidade,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
       };
 
       final requisicaoGraphQL = GraphQLRequest<String>(
@@ -387,6 +393,8 @@ class ServicoAutenticacao {
               tipo_entidade
               experiencias_anteriores
               portfolio_url
+              latitude
+              longitude
             }
           }
         }
