@@ -1,10 +1,9 @@
-// Este arquivo será o responsável por pegar o CEP, ir na internet (ViaCEP) descobrir a rua, e acionar o GPS para transformar isso em Latitude e Longitude.
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:geocoding/geocoding.dart';
 
 class ServicoGeolocalizacao {
-  /// Recebe um CEP, busca o endereço via ViaCEP e converte em Lat/Long
+  /// Recebe um CEP, busca o endereço via ViaCEP e converte em Lat/Long 
+  /// usando o OpenStreetMap (Nominatim), funcionando perfeitamente na Web e Mobile.
   static Future<Map<String, double>?> converterCepParaCoordenadas(String cep) async {
     try {
       // 1. Limpa a string (remove traços ou espaços do formulário)
@@ -21,17 +20,34 @@ class ServicoGeolocalizacao {
         // Retorna nulo se o ViaCEP não encontrar o CEP
         if (dadosCep.containsKey('erro')) return null;
 
-        // 3. Monta o endereço exato para o motor de busca do GPS nativo
-        final enderecoFormatado = '${dadosCep['logradouro']}, ${dadosCep['localidade']}, ${dadosCep['uf']}, Brasil';
+        // 3. Monta o endereço formatado para busca de coordenadas
+        final logradouro = dadosCep['logradouro'] ?? '';
+        final localidade = dadosCep['localidade'] ?? '';
+        final uf = dadosCep['uf'] ?? '';
         
-        // 4. Converte a rua formatada em coordenadas geográficas
-        List<Location> locais = await locationFromAddress(enderecoFormatado);
+        final enderecoQuery = Uri.encodeComponent('$logradouro, $localidade, $uf, Brasil');
+
+        // 4. Consulta a API pública de geocodificação (Nominatim) via HTTP
+        final geoUrl = Uri.parse('https://nominatim.openstreetmap.org/search?q=$enderecoQuery&format=json&limit=1');
         
-        if (locais.isNotEmpty) {
-          return {
-            'latitude': locais.first.latitude,
-            'longitude': locais.first.longitude,
-          };
+        // O Nominatim exige um User-Agent válido nas requisições HTTP
+        final geoResponse = await http.get(
+          geoUrl,
+          headers: {'User-Agent': 'ProjetoInterdisciplinarApp'},
+        );
+
+        if (geoResponse.statusCode == 200) {
+          final List resultados = jsonDecode(geoResponse.body);
+          
+          if (resultados.isNotEmpty) {
+            final double lat = double.parse(resultados[0]['lat']);
+            final double lon = double.parse(resultados[0]['lon']);
+            
+            return {
+              'latitude': lat,
+              'longitude': lon,
+            };
+          }
         }
       }
     } catch (e) {
@@ -41,3 +57,5 @@ class ServicoGeolocalizacao {
     return null;
   }
 }
+
+///Eliminámos a dependência do pacote nativo geocoding que crashava no Chrome. Agora, o próprio Flutter faz uma chamada HTTP leve ao serviço de mapas aberto (OpenStreetMap), recolhe a latitude e a longitude exatas e devolve-as para o cadastro, independentemente de estares a testar no navegador ou num telemóvel!
