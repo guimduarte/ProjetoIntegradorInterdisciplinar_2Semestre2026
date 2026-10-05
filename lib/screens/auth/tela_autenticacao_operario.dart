@@ -9,6 +9,7 @@ import '../../utils/validadores_campos_cadastro.dart';
 import '../../widgets/barra_progresso_etapas.dart';
 import '../../widgets/dialogo_confirmacao_codigo.dart';
 import '../operario/operario_tela.dart';
+import '../../services/servico_geolocalizacao.dart';
 
 /// Tela de autenticação do usuário 'Operário' (ÉPICO 01 - US01.2):
 /// login e cadastro em duas etapas integrado com AWS Amplify.
@@ -319,6 +320,30 @@ class _OperarioCadastroFormularioState
         }
       }
 
+// --- NOVO PASSO: Converter CEP em Coordenadas ---
+      double? latitudeBase;
+      double? longitudeBase;
+
+      final cepDigitado = _localizacaoController.text.trim();
+      final coordenadas = await ServicoGeolocalizacao.converterCepParaCoordenadas(cepDigitado);
+
+      if (coordenadas != null) {
+        latitudeBase = coordenadas['latitude'];
+        longitudeBase = coordenadas['longitude'];
+      } else {
+        // Se o CEP for inválido, bloqueia o registo e avisa o utilizador
+        if (!mounted) return;
+        scaffoldContext.showSnackBar(
+          const SnackBar(
+            content: Text('CEP inválido ou não encontrado. Verifique o seu endereço.'),
+            backgroundColor: CoresApp.vermelhoEscuro,
+          ),
+        );
+        setState(() => _carregandoCadastro = false);
+        return; 
+      }
+      // -------------------------------------------------
+
       // 5. Salvar dados completos do perfil na tabela User do AppSync GraphQL
       await _servicoAuth.salvarPerfilUsuarioNoBanco(
         perfil: 'operario',
@@ -333,6 +358,8 @@ class _OperarioCadastroFormularioState
         raioAtendimentoKm: _raioKm.round(),
         experienciasAnteriores: _experienciasController.text.trim(),
         portfolioUrl: urlPortfolioS3,
+        latitude: latitudeBase,
+        longitude: longitudeBase,
       );
 
       if (!mounted) return;
@@ -470,9 +497,11 @@ class _OperarioCadastroFormularioState
         const SizedBox(height: 12),
         TextFormField(
           controller: _localizacaoController,
-          decoration:
-              const InputDecoration(labelText: 'Localização de referência'),
+          decoration: const InputDecoration(
+            labelText: 'CEP (Apenas números)'
+            hintText: '00000-000'),
           validator: ValidadoresCamposCadastro.obrigatorio,
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
         TextFormField(
