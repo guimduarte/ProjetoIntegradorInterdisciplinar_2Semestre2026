@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/instituicao.dart';
 import '../../models/ordem_servico.dart';
+import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/titulo_secao.dart';
 import '../../widgets/card_servicos.dart';
@@ -22,46 +23,53 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
 
   @override
   Widget build(BuildContext context) {
-    final instituicao = mockInstituicaoAtual;
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 90),
-          children: [
-            _buildHeader(context, instituicao),
-            _buildStats(instituicao),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-              child: TituloSecao(titulo: 'Seus serviços publicados'),
+    return ListenableBuilder(
+      listenable: GerenciadorSessaoUsuario.instancia,
+      builder: (context, _) {
+        final instituicao = GerenciadorSessaoUsuario.instancia.instituicaoAtual;
+
+        return Scaffold(
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 90),
+              children: [
+                _buildHeader(context, instituicao),
+                _buildStats(instituicao),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                  child: const TituloSecao(titulo: 'Seus serviços publicados'),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: _publicados
+                        .map((s) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: CardServicos(servico: s),
+                            ))
+                        .toList(),
+                  ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: _publicados
-                    .map((s) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: CardServicos(servico: s),
-                        ))
-                    .toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final novo = await Navigator.of(context).push<OrdemServico>(
-            MaterialPageRoute(builder: (_) => const InstituicaoTelaNovoServico()),
-          );
-          if (novo != null) {
-            setState(() => _publicados.insert(0, novo));
-          }
-        },
-        backgroundColor: CoresApp.vermelhoAcao,
-        foregroundColor: CoresApp.branco,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Novo Serviço'),
-      ),
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () async {
+              final novo = await Navigator.of(context).push<OrdemServico>(
+                MaterialPageRoute(
+                    builder: (_) => const InstituicaoTelaNovoServico()),
+              );
+              if (novo != null) {
+                setState(() => _publicados.insert(0, novo));
+              }
+            },
+            backgroundColor: CoresApp.vermelhoAcao,
+            foregroundColor: CoresApp.branco,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Novo Serviço'),
+          ),
+        );
+      },
     );
   }
 
@@ -107,14 +115,16 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
                     builder: (_) => const TelaNotificacoes(ehInstituicao: true),
                   ),
                 ),
-                child: const Icon(Icons.notifications_none_rounded, color: CoresApp.branco),
+                child: const Icon(Icons.notifications_none_rounded,
+                    color: CoresApp.branco),
               ),
             ],
           ),
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, color: Color(0xFFFFC96B), size: 14),
+              const Icon(Icons.location_on_outlined,
+                  color: Color(0xFFFFC96B), size: 14),
               const SizedBox(width: 4),
               Text(
                 instituicao.localizacao,
@@ -180,8 +190,13 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
           ),
           const SizedBox(height: 8),
           Text(value,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: CoresApp.textoPrimario)),
-          Text(texto, style: const TextStyle(fontSize: 10, color: CoresApp.textoSecundario)),
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: CoresApp.textoPrimario)),
+          Text(texto,
+              style: const TextStyle(
+                  fontSize: 10, color: CoresApp.textoSecundario)),
         ],
       ),
     );

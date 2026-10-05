@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/instituicao.dart';
-import '../../models/operario.dart';
+import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/titulo_secao.dart';
 
@@ -33,13 +32,16 @@ class TelaAvaliacoes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reviews = ehInstituicao ? _reviewsInstituicao : _reviewsOperario;
-    final media = ehInstituicao ? 4.6 : mockOperarioAtual.avaliacaoMedia;
-    final nomeExibicao = ehInstituicao ? mockInstituicaoAtual.nome : mockOperarioAtual.nome;
+    final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
+    final instituicao = GerenciadorSessaoUsuario.instancia.instituicaoAtual;
+
+    final media = ehInstituicao ? 4.6 : operario.avaliacaoMedia;
+    final nomeExibicao = ehInstituicao ? instituicao.nome : operario.nome;
 
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Avaliar Serviços'),
-          automaticallyImplyLeading: false, //desativar a seta de voltar da topbar
+        title: const Text('Avaliar Serviços'),
+        automaticallyImplyLeading: false, // desativar a seta de voltar da topbar
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -55,11 +57,15 @@ class TelaAvaliacoes extends StatelessWidget {
             child: Column(
               children: [
                 Text(nomeExibicao,
-                    style: const TextStyle(fontSize: 13, color: CoresApp.textoSecundario)),
+                    style: const TextStyle(
+                        fontSize: 13, color: CoresApp.textoSecundario)),
                 const SizedBox(height: 6),
                 Text(
                   media.toStringAsFixed(1),
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: CoresApp.textoPrimario),
+                  style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: CoresApp.textoPrimario),
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -75,7 +81,8 @@ class TelaAvaliacoes extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text('${reviews.length} avaliações recebidas',
-                    style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
+                    style: const TextStyle(
+                        fontSize: 11, color: CoresApp.textoSecundario)),
               ],
             ),
           ),
@@ -98,12 +105,15 @@ class TelaAvaliacoes extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(r.autor,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              style: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w700)),
                           Row(
                             children: List.generate(
                               5,
                               (i) => Icon(
-                                i < r.estrelas ? Icons.star_rounded : Icons.star_border_rounded,
+                                i < r.estrelas
+                                    ? Icons.star_rounded
+                                    : Icons.star_border_rounded,
                                 size: 14,
                                 color: CoresApp.amareloSolidario,
                               ),
@@ -113,7 +123,10 @@ class TelaAvaliacoes extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(r.comentario,
-                          style: const TextStyle(fontSize: 12, color: CoresApp.textoSecundario, height: 1.4)),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: CoresApp.textoSecundario,
+                              height: 1.4)),
                     ],
                   ),
                 ),
