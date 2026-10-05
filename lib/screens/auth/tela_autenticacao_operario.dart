@@ -498,7 +498,7 @@ class _OperarioCadastroFormularioState
         TextFormField(
           controller: _localizacaoController,
           decoration: const InputDecoration(
-            labelText: 'CEP (Apenas números)'
+            labelText: 'CEP (Apenas números)',
             hintText: '00000-000'),
           validator: ValidadoresCamposCadastro.obrigatorio,
           keyboardType: TextInputType.number,
