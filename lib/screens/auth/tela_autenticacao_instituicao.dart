@@ -7,6 +7,7 @@ import '../../utils/validadores_campos_cadastro.dart';
 import '../../widgets/barra_progresso_etapas.dart';
 import '../../widgets/dialogo_confirmacao_codigo.dart';
 import '../instituicao/instituicao_tela.dart';
+import '../../services/servico_geolocalizacao.dart';
 
 /// Tela de autenticação do usuário 'Instituição' (ÉPICO 01 - US01.3):
 /// login e cadastro em duas etapas integrado com AWS Amplify.
@@ -287,6 +288,29 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         senha: _senhaController.text,
       );
 
+// --- NOVO PASSO: Converter CEP da Instituição em Coordenadas ---
+      double? latitudeBase;
+      double? longitudeBase;
+
+      final cepDigitado = _localizacaoController.text.trim();
+      final coordenadas = await ServicoGeolocalizacao.converterCepParaCoordenadas(cepDigitado);
+
+      if (coordenadas != null) {
+        latitudeBase = coordenadas['latitude'];
+        longitudeBase = coordenadas['longitude'];
+      } else {
+        if (!mounted) return;
+        scaffoldContext.showSnackBar(
+          const SnackBar(
+            content: Text('CEP inválido ou não encontrado. Verifique o seu endereço.'),
+            backgroundColor: CoresApp.vermelhoEscuro,
+          ),
+        );
+        setState(() => _carregandoCadastro = false);
+        return; 
+      }
+      // ---------------------------------------------------------------
+
       // 4. Salvar dados completos do perfil na tabela User do AppSync GraphQL
       final textoTipos =
           _tiposSelecionados.map((tipo) => tipo.texto).join(', ');
@@ -299,6 +323,8 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         nomeInstituicao: _nomeController.text.trim(),
         cnpj: _cnpjController.text.trim(),
         tipoEntidade: textoTipos,
+        latitude: latitudeBase,
+        longitude: longitudeBase,
       );
 
       if (!mounted) return;
@@ -436,8 +462,11 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _localizacaoController,
-          decoration: const InputDecoration(labelText: 'Localização'),
+          decoration: const InputDecoration(
+            labelText: 'CEP (Apenas números)',
+            hintText:'00000-000'),
           validator: ValidadoresCamposCadastro.obrigatorio,
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
         TextFormField(
