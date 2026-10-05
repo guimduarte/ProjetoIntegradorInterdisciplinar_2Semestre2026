@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 class ValidadoresCamposCadastro {
   ValidadoresCamposCadastro._();
 
@@ -12,11 +14,46 @@ class ValidadoresCamposCadastro {
     if (valor == null || valor.isEmpty) {
       return 'Campo obrigatório';
     }
-    final emailRegExp = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+    final emailRegExp = RegExp(
+        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
     if (!emailRegExp.hasMatch(valor)) {
       return 'E-mail inválido';
     }
     return null;
+  }
+
+  /// Validador de senha que reflete exatamente as políticas de segurança da AWS Cognito:
+  /// Retorna uma lista de pré-requisitos indicando com (✓) os cumpridos e com (✗) os faltantes.
+  static String? senha(String? valor) {
+    if (valor == null || valor.isEmpty) {
+      return 'Campo obrigatório';
+    }
+
+    final temOitoCaracteres = valor.length >= 8;
+    final temMaiuscula = RegExp(r'[A-Z]').hasMatch(valor);
+    final temMinuscula = RegExp(r'[a-z]').hasMatch(valor);
+    final temNumero = RegExp(r'[0-9]').hasMatch(valor);
+    final temSimbolo = RegExp(r'[\W_]').hasMatch(valor);
+
+    // Se todos os critérios forem atendidos, a senha é válida
+    if (temOitoCaracteres &&
+        temMaiuscula &&
+        temMinuscula &&
+        temNumero &&
+        temSimbolo) {
+      return null;
+    }
+
+    // Caso contrário, monta o checklist completo de critérios
+    final listaRequisitos = [
+      '${temOitoCaracteres ? "✓" : "✗"} Mínimo de 8 caracteres',
+      '${temMaiuscula ? "✓" : "✗"} Pelo menos 1 letra maiúscula (A-Z)',
+      '${temMinuscula ? "✓" : "✗"} Pelo menos 1 letra minúscula (a-z)',
+      '${temNumero ? "✓" : "✗"} Pelo menos 1 número (0-9)',
+      '${temSimbolo ? "✓" : "✗"} Pelo menos 1 símbolo especial (!@#\$...)',
+    ];
+
+    return 'A senha deve cumprir os requisitos:\n${listaRequisitos.join('\n')}';
   }
 
   static String? cpf(String? valor) {
@@ -30,8 +67,7 @@ class ValidadoresCamposCadastro {
     if (RegExp(r'^(\d)\1{10}$').hasMatch(cpfLimpo)) {
       return 'CPF inválido';
     }
-    
-    // Algoritmo de validação simplificado
+
     int soma = 0;
     for (int i = 0; i < 9; i++) {
       soma += int.parse(cpfLimpo[i]) * (10 - i);
@@ -91,8 +127,42 @@ class ValidadoresCamposCadastro {
     }
     final telLimpo = valor.replaceAll(RegExp(r'\D'), '');
     if (telLimpo.length < 10 || telLimpo.length > 11) {
-      return 'Telefone inválido';
+      return 'Telefone inválido (deve ter DDD + 8 ou 9 dígitos)';
     }
     return null;
+  }
+}
+
+/// Formatador dinâmico de telefone que suporta tanto telefone fixo (10 dígitos: (XX) XXXX-XXXX)
+/// quanto telefone celular (11 dígitos: (XX) XXXXX-XXXX).
+class FormatadorTelefoneDinamico extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitos = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digitos.length > 11) {
+      return oldValue;
+    }
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < digitos.length; i++) {
+      if (i == 0) buffer.write('(');
+      if (i == 2) buffer.write(') ');
+
+      if (digitos.length <= 10) {
+        if (i == 6) buffer.write('-');
+      } else {
+        if (i == 7) buffer.write('-');
+      }
+      buffer.write(digitos[i]);
+    }
+
+    final textoFormatado = buffer.toString();
+    return TextEditingValue(
+      text: textoFormatado,
+      selection: TextSelection.collapsed(offset: textoFormatado.length),
+    );
   }
 }
