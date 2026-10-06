@@ -80,8 +80,22 @@ class ServicoAutenticacao {
       final usuarioCognito = await obterUsuarioAtualLogado();
       if (usuarioCognito == null) return null;
 
-      final emailUsuario = usuarioCognito.username;
-      final mapaUsuario = await obterPerfilUsuarioPorEmail(emailUsuario);
+      // Obtém o e-mail real do usuário dos atributos do Cognito
+      String emailReal = usuarioCognito.username;
+      try {
+        final atributos = await Amplify.Auth.fetchUserAttributes();
+        for (final attr in atributos) {
+          if (attr.userAttributeKey == AuthUserAttributeKey.email) {
+            emailReal = attr.value;
+            break;
+          }
+        }
+      } catch (erroAtributos) {
+        safePrint(
+            'Aviso: Não foi possível obter os atributos de e-mail do Cognito: $erroAtributos');
+      }
+
+      final mapaUsuario = await obterPerfilUsuarioPorEmail(emailReal);
 
       if (mapaUsuario == null) return null;
 

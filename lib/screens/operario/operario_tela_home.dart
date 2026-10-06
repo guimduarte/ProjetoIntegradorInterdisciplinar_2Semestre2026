@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/nivel_experiencia.dart';
 import '../../models/operario.dart';
 import '../../models/ordem_servico.dart';
+import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/titulo_secao.dart';
 import '../../widgets/card_servicos.dart';
@@ -12,8 +13,7 @@ import 'operario_tela_de_detalhes_do_servico.dart';
 /// Tela inicial do operário (ÉPICO 04): exibe apenas os serviços
 /// dentro do raio de deslocamento cadastrado (US04.1) e sinaliza,
 /// sem esconder por completo, os serviços fora do nível de
-/// experiência exigido (US04.2 adaptado para fins de transparência
-/// no protótipo — cards aparecem bloqueados com o motivo).
+/// experiência exigido.
 class OperarioTelaHome extends StatefulWidget {
   const OperarioTelaHome({super.key});
 
@@ -26,66 +26,78 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
 
   @override
   Widget build(BuildContext context) {
-    final operario = mockOperarioAtual;
-    final servicos = mockOrdensServico.where((s) {
-      if (_filtroEscopo == null) return true;
-      return s.escopo == _filtroEscopo;
-    }).toList();
+    return ListenableBuilder(
+      listenable: GerenciadorSessaoUsuario.instancia,
+      builder: (context, _) {
+        final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
+        final servicos = mockOrdensServico.where((s) {
+          if (_filtroEscopo == null) return true;
+          return s.escopo == _filtroEscopo;
+        }).toList();
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 20),
-          children: [
-            _buildHeader(context, operario),
-            _buildImpactBanner(),
-            _buildQuickAccess(context),
-            _buildScopeFilter(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-              child: TituloSecao(
-                titulo: 'Serviços no seu raio (${operario.raioAtendimentoKm.toStringAsFixed(0)} km)',
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: servicos.map((s) {
-                  final estaApto = s.operarioEstaApto(
-                    operario.raioAtendimentoKm,
-                    operario.servicosRealizados,
-                  );
-                  final dentroDoRaio = s.distanciaKm <= operario.raioAtendimentoKm;
-                  String? motivo;
-                  if (!dentroDoRaio) {
-                    motivo = 'Fora do seu raio de atendimento';
-                  } else if (!estaApto) {
-                    motivo =
-                        'Requer nível ${s.complexidade.nivelMinimoExigido.texto}';
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: CardServicos(
-                      servico: s,
-                      locked: !estaApto,
-                      lockedReason: motivo,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => OperarioTelaDeDetalhesDoServico(servico: s),
+        return Scaffold(
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 20),
+              children: [
+                _buildHeader(context, operario),
+                _buildImpactBanner(operario),
+                _buildQuickAccess(context),
+                _buildScopeFilter(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                  child: TituloSecao(
+                    titulo:
+                        'Serviços no seu raio (${operario.raioAtendimentoKm.toStringAsFixed(0)} km)',
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: servicos.map((s) {
+                      final estaApto = s.operarioEstaApto(
+                        operario.raioAtendimentoKm,
+                        operario.servicosRealizados,
+                      );
+                      final dentroDoRaio =
+                          s.distanciaKm <= operario.raioAtendimentoKm;
+                      String? motivo;
+                      if (!dentroDoRaio) {
+                        motivo = 'Fora do seu raio de atendimento';
+                      } else if (!estaApto) {
+                        motivo =
+                            'Requer nível ${s.complexidade.nivelMinimoExigido.texto}';
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: CardServicos(
+                          servico: s,
+                          locked: !estaApto,
+                          lockedReason: motivo,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  OperarioTelaDeDetalhesDoServico(servico: s),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildHeader(BuildContext context, PerfilOperario operario) {
+    final primeiroNome = operario.nome.trim().isNotEmpty
+        ? operario.nome.trim().split(' ').first
+        : 'Operário';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
@@ -110,7 +122,7 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
                     style: TextStyle(color: Color(0xFFC7D3E6), fontSize: 12),
                   ),
                   Text(
-                    operario.nome.split(' ').first,
+                    primeiroNome,
                     style: const TextStyle(
                       color: CoresApp.branco,
                       fontSize: 18,
@@ -128,12 +140,14 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Icon(Icons.notifications_none_rounded, color: CoresApp.branco),
+                    const Icon(Icons.notifications_none_rounded,
+                        color: CoresApp.branco),
                     Positioned(
                       right: -4,
                       top: -4,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
                           color: CoresApp.amareloSolidario,
                           borderRadius: BorderRadius.circular(8),
@@ -156,7 +170,8 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, color: Color(0xFFFFC96B), size: 14),
+              const Icon(Icons.location_on_outlined,
+                  color: Color(0xFFFFC96B), size: 14),
               const SizedBox(width: 4),
               Text(
                 operario.localizacao,
@@ -176,7 +191,7 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
     );
   }
 
-  Widget _buildImpactBanner() {
+  Widget _buildImpactBanner(PerfilOperario operario) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Container(
@@ -187,7 +202,8 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.workspace_premium_rounded, color: CoresApp.amareloEscuro, size: 26),
+            const Icon(Icons.workspace_premium_rounded,
+                color: CoresApp.amareloEscuro, size: 26),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -202,8 +218,9 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
                     ),
                   ),
                   Text(
-                    '${mockOperarioAtual.pontos} pontos · ${mockOperarioAtual.servicosRealizados} serviços realizados',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF633806)),
+                    '${operario.pontos} pontos · ${operario.servicosRealizados} serviços realizados',
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF633806)),
                   ),
                 ],
               ),
@@ -222,10 +239,12 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const OperarioTelaServicos()),
+                MaterialPageRoute(
+                    builder: (_) => const OperarioTelaServicos()),
               ),
               icon: const Icon(Icons.assignment_outlined, size: 18),
-              label: const Text('Meus Serviços', style: TextStyle(fontSize: 12)),
+              label: const Text('Meus Serviços',
+                  style: TextStyle(fontSize: 12)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: CoresApp.azulConfianca,
                 side: const BorderSide(color: CoresApp.azulConfianca),
@@ -255,14 +274,16 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
               itemBuilder: (context, index) {
                 if (index == 0) {
                   final selected = _filtroEscopo == null;
-                  return _chip('Todos', selected, () => setState(() => _filtroEscopo = null));
+                  return _chip('Todos', selected,
+                      () => setState(() => _filtroEscopo = null));
                 }
                 final escopo = EscopoServico.values[index - 1];
                 final selected = _filtroEscopo == escopo;
                 return _chip(
                   escopo.texto,
                   selected,
-                  () => setState(() => _filtroEscopo = selected ? null : escopo),
+                  () =>
+                      setState(() => _filtroEscopo = selected ? null : escopo),
                 );
               },
             ),
@@ -279,9 +300,11 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
       onSelected: (_) => onTap(),
       selectedColor: CoresApp.vermelhoAcao,
       backgroundColor: CoresApp.branco,
-      labelStyle: TextStyle(color: selected ? CoresApp.branco : CoresApp.azulConfianca),
+      labelStyle: TextStyle(
+          color: selected ? CoresApp.branco : CoresApp.azulConfianca),
       shape: StadiumBorder(
-        side: BorderSide(color: selected ? CoresApp.vermelhoAcao : CoresApp.azulConfianca),
+        side: BorderSide(
+            color: selected ? CoresApp.vermelhoAcao : CoresApp.azulConfianca),
       ),
     );
   }

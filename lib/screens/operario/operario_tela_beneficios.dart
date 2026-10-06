@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/nivel_experiencia.dart';
-import '../../models/operario.dart';
 import '../../models/recompensa.dart';
+import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/card_cupom.dart';
 import '../../widgets/titulo_secao.dart';
@@ -16,17 +16,26 @@ class OperarioTelaBeneficios extends StatefulWidget {
 }
 
 class _OperarioTelaBeneficiosState extends State<OperarioTelaBeneficios> {
-  late int _saldo = mockOperarioAtual.pontos;
+  late int _saldo;
   CategoriaRecompensa? _filtro;
 
   @override
+  void initState() {
+    super.initState();
+    _saldo = GerenciadorSessaoUsuario.instancia.operarioAtual.pontos;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final cupons = mockCupons.where((c) => _filtro == null || c.categoria == _filtro).toList();
+    final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
+    final cupons = mockCupons
+        .where((c) => _filtro == null || c.categoria == _filtro)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Carteira de Benefícios'),
-          automaticallyImplyLeading: false, //desativar a seta de voltar da topbar
+        title: const Text('Carteira de Benefícios'),
+        automaticallyImplyLeading: false, // desativar a seta de voltar da topbar
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -62,14 +71,16 @@ class _OperarioTelaBeneficiosState extends State<OperarioTelaBeneficios> {
                     const Padding(
                       padding: EdgeInsets.only(left: 6, bottom: 6),
                       child: Text('pontos',
-                          style: TextStyle(color: Color(0xFFC7D3E6), fontSize: 13)),
+                          style:
+                              TextStyle(color: Color(0xFFC7D3E6), fontSize: 13)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${mockOperarioAtual.servicosRealizados} serviços realizados · nível ${mockOperarioAtual.nivelExperiencia.texto}',
-                  style: const TextStyle(color: Color(0xFFC7D3E6), fontSize: 11),
+                  '${operario.servicosRealizados} serviços realizados · nível ${operario.nivelExperiencia.texto}',
+                  style:
+                      const TextStyle(color: Color(0xFFC7D3E6), fontSize: 11),
                 ),
               ],
             ),
@@ -85,10 +96,12 @@ class _OperarioTelaBeneficiosState extends State<OperarioTelaBeneficios> {
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 if (i == 0) {
-                  return _filterChip('Todos', _filtro == null, () => setState(() => _filtro = null));
+                  return _filterChip(
+                      'Todos', _filtro == null, () => setState(() => _filtro = null));
                 }
                 final cat = CategoriaRecompensa.values[i - 1];
-                return _filterChip(cat.texto, _filtro == cat, () => setState(() => _filtro = cat));
+                return _filterChip(
+                    cat.texto, _filtro == cat, () => setState(() => _filtro = cat));
               },
             ),
           ),
@@ -115,9 +128,11 @@ class _OperarioTelaBeneficiosState extends State<OperarioTelaBeneficios> {
       onSelected: (_) => onTap(),
       selectedColor: CoresApp.vermelhoAcao,
       backgroundColor: CoresApp.branco,
-      labelStyle: TextStyle(color: selected ? CoresApp.branco : CoresApp.azulConfianca),
+      labelStyle:
+          TextStyle(color: selected ? CoresApp.branco : CoresApp.azulConfianca),
       shape: StadiumBorder(
-        side: BorderSide(color: selected ? CoresApp.vermelhoAcao : CoresApp.azulConfianca),
+        side: BorderSide(
+            color: selected ? CoresApp.vermelhoAcao : CoresApp.azulConfianca),
       ),
     );
   }
@@ -129,13 +144,16 @@ class _OperarioTelaBeneficiosState extends State<OperarioTelaBeneficios> {
         title: const Text('Confirmar resgate'),
         content: Text('Resgatar "${c.titulo}" por ${c.custoPontos} pontos?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () {
               setState(() => _saldo -= c.custoPontos);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Cupom "${c.titulo}" resgatado com sucesso!')),
+                SnackBar(
+                    content: Text('Cupom "${c.titulo}" resgatado com sucesso!')),
               );
             },
             child: const Text('Confirmar'),
