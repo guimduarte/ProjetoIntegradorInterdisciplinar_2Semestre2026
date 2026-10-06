@@ -192,7 +192,9 @@ class OrdemServico {
   final bool marcadoComoAvancado;
   final String instituicaoNome;
   final String instituicaoLocalizacao;
-  final double distanciaKm;
+  final double? latitude;
+  final double? longitude;
+  double distanciaKm;
   final double horasEstimadas;
   final int candidatos;
   StatusServico status;
@@ -207,7 +209,9 @@ class OrdemServico {
     this.marcadoComoAvancado = false,
     required this.instituicaoNome,
     required this.instituicaoLocalizacao,
-    required this.distanciaKm,
+    this.latitude,
+    this.longitude,
+    this.distanciaKm = 0.0, //valor padrao para calculo
     required this.horasEstimadas,
     this.candidatos = 0,
     this.status = StatusServico.aberto,

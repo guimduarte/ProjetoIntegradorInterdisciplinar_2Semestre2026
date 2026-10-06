@@ -50,6 +50,9 @@ class GerenciadorSessaoUsuario extends ChangeNotifier {
         ? escoposBrutos.map((e) => e.toString()).toList()
         : ['Manutenção básica'];
 
+    final double? lat = (mapa['latitude'] as num?)?.toDouble();
+    final double? lon = (mapa['longitude'] as num?)?.toDouble();
+
     final int servicos =
         (mapa['quantidade_servicos_realizados'] as num?)?.toInt() ??
             int.tryParse(mapa['nivel_operario'] ?? '0') ??
@@ -64,6 +67,8 @@ class GerenciadorSessaoUsuario extends ChangeNotifier {
       telefone: mapa['telefone'] as String? ?? '',
       cpf: mapa['cpf'] as String? ?? '',
       localizacao: mapa['endereco_texto'] as String? ?? 'São Paulo, SP',
+      latitude: lat,
+      longitude: lon,
       portfolioAnexado: mapa['portfolio_url'] != null &&
           (mapa['portfolio_url'] as String).isNotEmpty,
       experienciasAnteriores: mapa['experiencias_anteriores'] as String? ??

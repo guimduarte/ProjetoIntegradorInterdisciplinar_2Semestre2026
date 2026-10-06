@@ -20,6 +20,8 @@ class PerfilOperario {
   final String telefone;
   final String cpf;
   final String localizacao;
+  final double? latitude;
+  final double? longitude;
   final bool portfolioAnexado;
   final String experienciasAnteriores;
   final List<String> escopos;
@@ -34,6 +36,8 @@ class PerfilOperario {
     required this.telefone,
     required this.cpf,
     required this.localizacao,
+    this.latitude,
+    this.longitude,
     required this.portfolioAnexado,
     required this.experienciasAnteriores,
     required this.escopos,
@@ -58,6 +62,8 @@ class PerfilOperario {
     String? email,
     String? telefone,
     String? localizacao,
+    double? latitude,
+    double? longitude,
     double? raioAtendimentoKm,
     List<String>? escopos,
     String? experienciasAnteriores,
@@ -68,6 +74,8 @@ class PerfilOperario {
       telefone: telefone ?? this.telefone,
       cpf: cpf,
       localizacao: localizacao ?? this.localizacao,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       portfolioAnexado: portfolioAnexado,
       experienciasAnteriores:
           experienciasAnteriores ?? this.experienciasAnteriores,
