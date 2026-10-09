@@ -7,6 +7,7 @@ import '../../utils/validadores_campos_cadastro.dart';
 import '../../widgets/barra_progresso_etapas.dart';
 import '../../widgets/dialogo_confirmacao_codigo.dart';
 import '../instituicao/instituicao_tela.dart';
+import '../../services/servico_geolocalizacao.dart';
 
 /// Tela de autenticação do usuário 'Instituição' (ÉPICO 01 - US01.3):
 /// login e cadastro em duas etapas integrado com AWS Amplify.
@@ -195,10 +196,6 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
     mask: '##.###.###/####-##',
     filter: {"#": RegExp(r'[0-9]')},
   );
-  final _telefoneMask = MaskTextInputFormatter(
-    mask: '(##) ####-####',
-    filter: {"#": RegExp(r'[0-9]')},
-  );
 
   // Parte 1 — Dados institucionais
   final _nomeController = TextEditingController();
@@ -246,76 +243,114 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
 
     setState(() => _carregandoCadastro = true);
 
-    // 1. Criar usuário no Cognito
-    final resultadoCognito = await _servicoAuth.cadastrarUsuarioCognito(
-      email: _emailController.text,
-      senha: _senhaController.text,
-    );
+    try {
+      // 1. Criar usuário no Cognito
+      final resultadoCognito = await _servicoAuth.cadastrarUsuarioCognito(
+        email: _emailController.text,
+        senha: _senhaController.text,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (!resultadoCognito.sucesso) {
-      setState(() => _carregandoCadastro = false);
+      bool contaJaExistia = false;
+
+      if (!resultadoCognito.sucesso) {
+        if (resultadoCognito.mensagemErro?.contains('Já existe uma conta') ==
+            true) {
+          contaJaExistia = true;
+        } else {
+          scaffoldContext.showSnackBar(
+            SnackBar(
+              content: Text(resultadoCognito.mensagemErro ??
+                  'Erro ao realizar cadastro no sistema.'),
+              backgroundColor: CoresApp.vermelhoEscuro,
+            ),
+          );
+          return;
+        }
+      }
+
+      // 2. Se for nova conta, exibe diálogo de confirmação do código recebido por e-mail
+      if (!contaJaExistia && resultadoCognito.requerConfirmacaoCodigo) {
+        if (!mounted) return;
+        final confirmou = await DialogoConfirmacaoCodigo.exibir(
+          contexto: context,
+          emailUsuario: _emailController.text.trim(),
+        );
+        if (confirmou != true || !mounted) {
+          return;
+        }
+      }
+
+      // 3. Processos pós-confirmação (Login e Cadastro GraphQL)
+      await _servicoAuth.fazerLogin(
+        email: _emailController.text,
+        senha: _senhaController.text,
+      );
+
+// --- NOVO PASSO: Converter CEP da Instituição em Coordenadas ---
+      double? latitudeBase;
+      double? longitudeBase;
+
+      final cepDigitado = _localizacaoController.text.trim();
+      final coordenadas = await ServicoGeolocalizacao.converterCepParaCoordenadas(cepDigitado);
+
+      if (coordenadas != null) {
+        latitudeBase = coordenadas['latitude'];
+        longitudeBase = coordenadas['longitude'];
+      } else {
+        if (!mounted) return;
+        scaffoldContext.showSnackBar(
+          const SnackBar(
+            content: Text('CEP inválido ou não encontrado. Verifique o seu endereço.'),
+            backgroundColor: CoresApp.vermelhoEscuro,
+          ),
+        );
+        setState(() => _carregandoCadastro = false);
+        return; 
+      }
+      // ---------------------------------------------------------------
+
+      // 4. Salvar dados completos do perfil na tabela User do AppSync GraphQL
+      final textoTipos =
+          _tiposSelecionados.map((tipo) => tipo.texto).join(', ');
+
+      await _servicoAuth.salvarPerfilUsuarioNoBanco(
+        perfil: 'instituicao',
+        email: _emailController.text.trim(),
+        telefone: _telefoneController.text.trim(),
+        enderecoTexto: _localizacaoController.text.trim(),
+        nomeInstituicao: _nomeController.text.trim(),
+        cnpj: _cnpjController.text.trim(),
+        tipoEntidade: textoTipos,
+        latitude: latitudeBase,
+        longitude: longitudeBase,
+      );
+
+      if (!mounted) return;
+
       scaffoldContext.showSnackBar(
-        SnackBar(
-          content: Text(resultadoCognito.mensagemErro ??
-              'Erro ao realizar cadastro no sistema.'),
-          backgroundColor: CoresApp.vermelhoEscuro,
+        const SnackBar(
+          content: Text('Cadastro institucional concluído com sucesso!'),
+          backgroundColor: CoresApp.verdeSucesso,
         ),
       );
-      return;
-    }
 
-    // 2. Exibir diálogo de confirmação do código recebido por e-mail
-    bool emailConfirmado = true;
-    if (resultadoCognito.requerConfirmacaoCodigo) {
-      if (!mounted) return;
-      final confirmou = await DialogoConfirmacaoCodigo.exibir(
-        contexto: context,
-        emailUsuario: _emailController.text.trim(),
+      navContext.pushReplacement(
+        MaterialPageRoute(builder: (_) => const InstituicaoTela()),
       );
-      emailConfirmado = confirmou == true;
+    } catch (erroGeral) {
+      debugPrint('Erro na finalização do cadastro de instituição: $erroGeral');
+      if (!mounted) return;
+
+      navContext.pushReplacement(
+        MaterialPageRoute(builder: (_) => const InstituicaoTela()),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _carregandoCadastro = false);
+      }
     }
-
-    if (!emailConfirmado || !mounted) {
-      setState(() => _carregandoCadastro = false);
-      return;
-    }
-
-    // 3. Fazer login temporário para estabelecer sessão autenticada no AppSync
-    await _servicoAuth.fazerLogin(
-      email: _emailController.text,
-      senha: _senhaController.text,
-    );
-
-    // 4. Salvar dados completos do perfil na tabela User do AppSync GraphQL
-    final textoTipos =
-        _tiposSelecionados.map((tipo) => tipo.texto).join(', ');
-
-    await _servicoAuth.salvarPerfilUsuarioNoBanco(
-      perfil: 'instituicao',
-      email: _emailController.text.trim(),
-      telefone: _telefoneController.text.trim(),
-      enderecoTexto: _localizacaoController.text.trim(),
-      nomeInstituicao: _nomeController.text.trim(),
-      cnpj: _cnpjController.text.trim(),
-      tipoEntidade: textoTipos,
-    );
-
-    if (!mounted) return;
-
-    setState(() => _carregandoCadastro = false);
-
-    scaffoldContext.showSnackBar(
-      const SnackBar(
-        content: Text('Cadastro institucional concluído com sucesso!'),
-        backgroundColor: CoresApp.verdeSucesso,
-      ),
-    );
-
-    navContext.pushReplacement(
-      MaterialPageRoute(builder: (_) => const InstituicaoTela()),
-    );
   }
 
   @override
@@ -409,9 +444,10 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         TextFormField(
           controller: _telefoneController,
           decoration: const InputDecoration(
-              labelText: 'Telefone', hintText: '(00) 0000-0000'),
+              labelText: 'Telefone (Fixo ou Celular)',
+              hintText: '(00) 0000-0000 ou (00) 00000-0000'),
           validator: ValidadoresCamposCadastro.telefone,
-          inputFormatters: [_telefoneMask],
+          inputFormatters: [FormatadorTelefoneDinamico()],
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 12),
@@ -426,8 +462,11 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _localizacaoController,
-          decoration: const InputDecoration(labelText: 'Localização'),
+          decoration: const InputDecoration(
+            labelText: 'CEP (Apenas números)',
+            hintText:'00000-000'),
           validator: ValidadoresCamposCadastro.obrigatorio,
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -435,13 +474,9 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
           obscureText: true,
           decoration: const InputDecoration(
             labelText: 'Senha de acesso',
-            hintText: 'Mínimo 8 caracteres (A-z, 0-9, !@#)',
+            hintText: 'Ex: Senha@123 (A-z, 0-9, símbolos)',
           ),
-          validator: (v) {
-            if (v == null || v.isEmpty) return 'Campo obrigatório';
-            if (v.length < 8) return 'A senha deve ter no mínimo 8 caracteres';
-            return null;
-          },
+          validator: ValidadoresCamposCadastro.senha,
         ),
       ],
     );

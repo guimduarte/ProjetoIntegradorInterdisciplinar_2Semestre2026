@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../models/operario.dart';
 import '../../services/servico_autenticacao.dart';
@@ -7,6 +9,7 @@ import '../../utils/validadores_campos_cadastro.dart';
 import '../../widgets/barra_progresso_etapas.dart';
 import '../../widgets/dialogo_confirmacao_codigo.dart';
 import '../operario/operario_tela.dart';
+import '../../services/servico_geolocalizacao.dart';
 
 /// Tela de autenticação do usuário 'Operário' (ÉPICO 01 - US01.2):
 /// login e cadastro em duas etapas integrado com AWS Amplify.
@@ -196,10 +199,6 @@ class _OperarioCadastroFormularioState
     mask: '###.###.###-##',
     filter: {"#": RegExp(r'[0-9]')},
   );
-  final _telefoneMask = MaskTextInputFormatter(
-    mask: '(##) #####-####',
-    filter: {"#": RegExp(r'[0-9]')},
-  );
 
   // Parte 1 — Dados pessoais
   final _nomeController = TextEditingController();
@@ -209,8 +208,8 @@ class _OperarioCadastroFormularioState
   final _localizacaoController = TextEditingController();
   final _senhaController = TextEditingController();
 
-  // Parte 2 — Perfil profissional
-  bool _portfolioAnexado = false;
+  // Parte 2 — Perfil profissional e Portfólio
+  PlatformFile? _arquivoPortfolioSelecionado;
   final _experienciasController = TextEditingController();
   final Set<String> _escoposSelecionados = {};
   int _nivelDeclarado = 0; // 0, 3 ou 5 serviços
@@ -228,6 +227,30 @@ class _OperarioCadastroFormularioState
     super.dispose();
   }
 
+  Future<void> _selecionarArquivoPortfolio() async {
+    try {
+      final resultado = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg'],
+        withData: true, // <--- Importante para carregar bytes no Flutter Web!
+      );
+
+      if (resultado != null && resultado.files.isNotEmpty) {
+        setState(() {
+          _arquivoPortfolioSelecionado = resultado.files.first;
+        });
+      }
+    } catch (erro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao selecionar arquivo: $erro'),
+          backgroundColor: CoresApp.vermelhoEscuro,
+        ),
+      );
+    }
+  }
+
   Future<void> _finalizarCadastro(BuildContext context) async {
     if (!_formKeyDois.currentState!.validate()) return;
 
@@ -236,77 +259,134 @@ class _OperarioCadastroFormularioState
 
     setState(() => _carregandoCadastro = true);
 
-    // 1. Criar usuário no Cognito
-    final resultadoCognito = await _servicoAuth.cadastrarUsuarioCognito(
-      email: _emailController.text,
-      senha: _senhaController.text,
-    );
+    try {
+      // 1. Tentar criar usuário no Cognito
+      final resultadoCognito = await _servicoAuth.cadastrarUsuarioCognito(
+        email: _emailController.text,
+        senha: _senhaController.text,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (!resultadoCognito.sucesso) {
-      setState(() => _carregandoCadastro = false);
+      bool contaJaExistia = false;
+
+      if (!resultadoCognito.sucesso) {
+        if (resultadoCognito.mensagemErro?.contains('Já existe uma conta') ==
+            true) {
+          contaJaExistia = true;
+        } else {
+          scaffoldContext.showSnackBar(
+            SnackBar(
+              content: Text(resultadoCognito.mensagemErro ??
+                  'Erro ao realizar cadastro no sistema.'),
+              backgroundColor: CoresApp.vermelhoEscuro,
+            ),
+          );
+          return;
+        }
+      }
+
+      // 2. Se for uma nova conta, exibe diálogo de confirmação do código recebido por e-mail
+      if (!contaJaExistia && resultadoCognito.requerConfirmacaoCodigo) {
+        final confirmou = await DialogoConfirmacaoCodigo.exibir(
+          contexto: context,
+          emailUsuario: _emailController.text.trim(),
+        );
+        if (confirmou != true || !mounted) {
+          return;
+        }
+      }
+
+      // 3. Fazer login temporário para estabelecer sessão autenticada
+      await _servicoAuth.fazerLogin(
+        email: _emailController.text,
+        senha: _senhaController.text,
+      );
+
+      // 4. Se o usuário selecionou um portfólio, tenta enviar para o Amazon S3 Storage
+      String? urlPortfolioS3;
+      if (_arquivoPortfolioSelecionado != null) {
+        try {
+          final String? caminhoLocal =
+              kIsWeb ? null : _arquivoPortfolioSelecionado!.path;
+
+          urlPortfolioS3 = await _servicoAuth.enviarArquivoPortfolioParaS3(
+            nomeOriginalArquivo: _arquivoPortfolioSelecionado!.name,
+            bytesArquivo: _arquivoPortfolioSelecionado!.bytes,
+            caminhoArquivoLocal: caminhoLocal,
+          );
+        } catch (erroS3) {
+          debugPrint('Aviso: Falha ao enviar arquivo para o S3: $erroS3');
+        }
+      }
+
+// --- NOVO PASSO: Converter CEP em Coordenadas ---
+      double? latitudeBase;
+      double? longitudeBase;
+
+      final cepDigitado = _localizacaoController.text.trim();
+      final coordenadas = await ServicoGeolocalizacao.converterCepParaCoordenadas(cepDigitado);
+
+      if (coordenadas != null) {
+        latitudeBase = coordenadas['latitude'];
+        longitudeBase = coordenadas['longitude'];
+      } else {
+        // Se o CEP for inválido, bloqueia o registo e avisa o utilizador
+        if (!mounted) return;
+        scaffoldContext.showSnackBar(
+          const SnackBar(
+            content: Text('CEP inválido ou não encontrado. Verifique o seu endereço.'),
+            backgroundColor: CoresApp.vermelhoEscuro,
+          ),
+        );
+        setState(() => _carregandoCadastro = false);
+        return; 
+      }
+      // -------------------------------------------------
+
+      // 5. Salvar dados completos do perfil na tabela User do AppSync GraphQL
+      await _servicoAuth.salvarPerfilUsuarioNoBanco(
+        perfil: 'operario',
+        email: _emailController.text.trim(),
+        telefone: _telefoneController.text.trim(),
+        enderecoTexto: _localizacaoController.text.trim(),
+        nome: _nomeController.text.trim(),
+        cpf: _cpfController.text.trim(),
+        escopoOperario: _escoposSelecionados.toList(),
+        nivelOperario: _nivelDeclarado.toString(),
+        quantidadeServicosRealizados: _nivelDeclarado,
+        raioAtendimentoKm: _raioKm.round(),
+        experienciasAnteriores: _experienciasController.text.trim(),
+        portfolioUrl: urlPortfolioS3,
+        latitude: latitudeBase,
+        longitude: longitudeBase,
+      );
+
+      if (!mounted) return;
+
       scaffoldContext.showSnackBar(
-        SnackBar(
-          content: Text(resultadoCognito.mensagemErro ??
-              'Erro ao realizar cadastro no sistema.'),
-          backgroundColor: CoresApp.vermelhoEscuro,
+        const SnackBar(
+          content: Text('Cadastro de operário concluído com sucesso!'),
+          backgroundColor: CoresApp.verdeSucesso,
         ),
       );
-      return;
-    }
 
-    // 2. Exibir diálogo de confirmação do código recebido por e-mail
-    bool emailConfirmado = true;
-    if (resultadoCognito.requerConfirmacaoCodigo) {
-      if (!mounted) return;
-      final confirmou = await DialogoConfirmacaoCodigo.exibir(
-        contexto: context,
-        emailUsuario: _emailController.text.trim(),
+      navContext.pushReplacement(
+        MaterialPageRoute(builder: (_) => const OperarioTela()),
       );
-      emailConfirmado = confirmou == true;
+    } catch (erroGeral) {
+      debugPrint('Erro na finalização do cadastro de operário: $erroGeral');
+      if (!mounted) return;
+
+      // Mesmo que haja exceção no meio, tenta direcionar se a sessão estiver ativa
+      navContext.pushReplacement(
+        MaterialPageRoute(builder: (_) => const OperarioTela()),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _carregandoCadastro = false);
+      }
     }
-
-    if (!emailConfirmado || !mounted) {
-      setState(() => _carregandoCadastro = false);
-      return;
-    }
-
-    // 3. Fazer login temporário para estabelecer sessão autenticada no AppSync
-    await _servicoAuth.fazerLogin(
-      email: _emailController.text,
-      senha: _senhaController.text,
-    );
-
-    // 4. Salvar dados completos do perfil na tabela User do AppSync GraphQL
-    await _servicoAuth.salvarPerfilUsuarioNoBanco(
-      perfil: 'operario',
-      email: _emailController.text.trim(),
-      telefone: _telefoneController.text.trim(),
-      enderecoTexto: _localizacaoController.text.trim(),
-      nome: _nomeController.text.trim(),
-      cpf: _cpfController.text.trim(),
-      escopoOperario: _escoposSelecionados.toList(),
-      nivelOperario: _nivelDeclarado.toString(),
-      quantidadeServicosRealizados: _nivelDeclarado,
-      raioAtendimentoKm: _raioKm.round(),
-      experienciasAnteriores: _experienciasController.text.trim(),
-    );
-
-    if (!mounted) return;
-
-    setState(() => _carregandoCadastro = false);
-
-    scaffoldContext.showSnackBar(
-      const SnackBar(
-        content: Text('Cadastro de operário concluído com sucesso!'),
-        backgroundColor: CoresApp.verdeSucesso,
-      ),
-    );
-
-    navContext.pushReplacement(
-      MaterialPageRoute(builder: (_) => const OperarioTela()),
-    );
   }
 
   @override
@@ -399,9 +479,10 @@ class _OperarioCadastroFormularioState
         TextFormField(
           controller: _telefoneController,
           decoration: const InputDecoration(
-              labelText: 'Telefone', hintText: '(00) 00000-0000'),
+              labelText: 'Telefone (Fixo ou Celular)',
+              hintText: '(00) 0000-0000 ou (00) 00000-0000'),
           validator: ValidadoresCamposCadastro.telefone,
-          inputFormatters: [_telefoneMask],
+          inputFormatters: [FormatadorTelefoneDinamico()],
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 12),
@@ -416,9 +497,11 @@ class _OperarioCadastroFormularioState
         const SizedBox(height: 12),
         TextFormField(
           controller: _localizacaoController,
-          decoration:
-              const InputDecoration(labelText: 'Localização de referência'),
+          decoration: const InputDecoration(
+            labelText: 'CEP (Apenas números)',
+            hintText: '00000-000'),
           validator: ValidadoresCamposCadastro.obrigatorio,
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -426,13 +509,9 @@ class _OperarioCadastroFormularioState
           obscureText: true,
           decoration: const InputDecoration(
             labelText: 'Senha de acesso',
-            hintText: 'Mínimo 8 caracteres (A-z, 0-9, !@#)',
+            hintText: 'Ex: Senha@123 (A-z, 0-9, símbolos)',
           ),
-          validator: (v) {
-            if (v == null || v.isEmpty) return 'Campo obrigatório';
-            if (v.length < 8) return 'A senha deve ter no mínimo 8 caracteres';
-            return null;
-          },
+          validator: ValidadoresCamposCadastro.senha,
         ),
       ],
     );
@@ -446,36 +525,68 @@ class _OperarioCadastroFormularioState
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         const SizedBox(height: 14),
         InkWell(
-          onTap: () => setState(() => _portfolioAnexado = !_portfolioAnexado),
+          onTap: _selecionarArquivoPortfolio,
           borderRadius: BorderRadius.circular(10),
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: _portfolioAnexado ? CoresApp.verdeFundo : CoresApp.branco,
+              color: _arquivoPortfolioSelecionado != null
+                  ? CoresApp.verdeFundo
+                  : CoresApp.branco,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color:
-                    _portfolioAnexado ? CoresApp.verdeSucesso : CoresApp.borda,
+                color: _arquivoPortfolioSelecionado != null
+                    ? CoresApp.verdeSucesso
+                    : CoresApp.borda,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  _portfolioAnexado
-                      ? Icons.check_circle_rounded
+                  _arquivoPortfolioSelecionado != null
+                      ? Icons.file_present_rounded
                       : Icons.upload_file_rounded,
-                  color: _portfolioAnexado
+                  color: _arquivoPortfolioSelecionado != null
                       ? CoresApp.verdeSucesso
                       : CoresApp.textoSecundario,
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  _portfolioAnexado
-                      ? 'Portfólio anexado'
-                      : 'Anexar portfólio (fotos de trabalhos)',
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _arquivoPortfolioSelecionado != null
+                            ? _arquivoPortfolioSelecionado!.name
+                            : 'Anexar portfólio (PDF, Word ou imagem)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _arquivoPortfolioSelecionado != null
+                              ? CoresApp.verdeEscuro
+                              : CoresApp.textoPrimario,
+                        ),
+                      ),
+                      if (_arquivoPortfolioSelecionado != null)
+                        Text(
+                          '${(_arquivoPortfolioSelecionado!.size / 1024).toStringAsFixed(1)} KB · Clique para alterar',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: CoresApp.textoSecundario,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
+                if (_arquivoPortfolioSelecionado != null)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded,
+                        size: 18, color: CoresApp.vermelhoEscuro),
+                    onPressed: () =>
+                        setState(() => _arquivoPortfolioSelecionado = null),
+                  ),
               ],
             ),
           ),

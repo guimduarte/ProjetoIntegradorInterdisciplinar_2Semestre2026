@@ -13,7 +13,11 @@ dependencies:
   amplify_flutter: ^2.11.0
   amplify_auth_cognito: ^2.11.0
   amplify_api: ^2.11.0
+  amplify_storage_s3: ^2.11.0
+  file_picker: ^8.1.2
   mask_text_input_formatter: ^2.5.0
+  http: ^1.6.0
+  geocoding: ^5.0.0
 
 dev_dependencies:
   flutter_test:

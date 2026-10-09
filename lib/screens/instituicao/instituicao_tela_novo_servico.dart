@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/nivel_experiencia.dart';
-import '../../models/instituicao.dart';
 import '../../models/ordem_servico.dart';
+import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/selo_de_complexidade.dart';
 
@@ -13,10 +13,12 @@ class InstituicaoTelaNovoServico extends StatefulWidget {
   const InstituicaoTelaNovoServico({super.key});
 
   @override
-  State<InstituicaoTelaNovoServico> createState() => _InstituicaoTelaNovoServicoState();
+  State<InstituicaoTelaNovoServico> createState() =>
+      _InstituicaoTelaNovoServicoState();
 }
 
-class _InstituicaoTelaNovoServicoState extends State<InstituicaoTelaNovoServico> {
+class _InstituicaoTelaNovoServicoState
+    extends State<InstituicaoTelaNovoServico> {
   final _tituloController = TextEditingController();
   final _descricaoController = TextEditingController();
   final _horasController = TextEditingController(text: '4');
@@ -45,14 +47,17 @@ class _InstituicaoTelaNovoServicoState extends State<InstituicaoTelaNovoServico>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Título', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            const Text('Título',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             TextField(
               controller: _tituloController,
-              decoration: const InputDecoration(hintText: 'Ex: Pintura do salão comunitário'),
+              decoration: const InputDecoration(
+                  hintText: 'Ex: Pintura do salão comunitário'),
             ),
             const SizedBox(height: 16),
-            const Text('Escopo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            const Text('Escopo',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -70,9 +75,11 @@ class _InstituicaoTelaNovoServicoState extends State<InstituicaoTelaNovoServico>
                             value: e,
                             child: Row(
                               children: [
-                                Icon(e.icone, size: 16, color: CoresApp.azulClaro),
+                                Icon(e.icone,
+                                    size: 16, color: CoresApp.azulClaro),
                                 const SizedBox(width: 8),
-                                Text(e.texto, style: const TextStyle(fontSize: 13)),
+                                Text(e.texto,
+                                    style: const TextStyle(fontSize: 13)),
                               ],
                             ),
                           ))
@@ -85,13 +92,15 @@ class _InstituicaoTelaNovoServicoState extends State<InstituicaoTelaNovoServico>
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Descrição', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            const Text('Descrição',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             TextField(
               controller: _descricaoController,
               maxLines: 4,
               decoration: const InputDecoration(
-                hintText: 'Descreva o serviço, o contexto e requisitos prévios',
+                hintText:
+                    'Descreva o serviço, o contexto e requisitos prévios',
                 alignLabelWithHint: true,
               ),
             ),
@@ -118,21 +127,25 @@ class _InstituicaoTelaNovoServicoState extends State<InstituicaoTelaNovoServico>
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.auto_awesome_rounded, size: 16, color: CoresApp.azulClaro),
+                      Icon(Icons.auto_awesome_rounded,
+                          size: 16, color: CoresApp.azulClaro),
                       SizedBox(width: 6),
                       Text('Complexidade calculada automaticamente',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                          style: TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w700)),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      SeloDeComplexidade(complexidade: _complexidadeAtual, showPoints: true),
+                      SeloDeComplexidade(
+                          complexidade: _complexidadeAtual, showPoints: true),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Requer operário de nível ${_complexidadeAtual.nivelMinimoExigido.texto}',
-                          style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario),
+                          style: const TextStyle(
+                              fontSize: 11, color: CoresApp.textoSecundario),
                         ),
                       ),
                     ],
@@ -141,7 +154,8 @@ class _InstituicaoTelaNovoServicoState extends State<InstituicaoTelaNovoServico>
                     const SizedBox(height: 8),
                     CheckboxListTile(
                       value: _marcarAvancado,
-                      onChanged: (v) => setState(() => _marcarAvancado = v ?? false),
+                      onChanged: (v) =>
+                          setState(() => _marcarAvancado = v ?? false),
                       title: const Text(
                         'Marcar como Avançado (serviço extenso ou de alta complexidade, exige 5+ serviços)',
                         style: TextStyle(fontSize: 11),
@@ -170,11 +184,11 @@ class _InstituicaoTelaNovoServicoState extends State<InstituicaoTelaNovoServico>
 
   void _publicar() {
     if (_tituloController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Informe um título para o serviço.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Informe um título para o serviço.')));
       return;
     }
-    final instituicao = mockInstituicaoAtual;
+    final instituicao = GerenciadorSessaoUsuario.instancia.instituicaoAtual;
     final novo = OrdemServico(
       id: 'novo-${DateTime.now().millisecondsSinceEpoch}',
       titulo: _tituloController.text.trim(),
