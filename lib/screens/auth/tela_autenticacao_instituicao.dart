@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../models/instituicao.dart';
 import '../../services/servico_autenticacao.dart';
@@ -211,6 +213,32 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
     for (final t in TipoInstituicao.values) t: TextEditingController(),
   };
 
+  PlatformFile? _estatutoSelecionado;
+
+  Future<void> _selecionarEstatutoSocial() async {
+    try {
+      final resultado = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg'],
+        withData: true,
+      );
+
+      if (resultado != null && resultado.files.isNotEmpty) {
+        setState(() {
+          _estatutoSelecionado = resultado.files.first;
+        });
+      }
+    } catch (erro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao selecionar documento: $erro'),
+          backgroundColor: CoresApp.vermelhoEscuro,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _nomeController.dispose();
@@ -288,7 +316,24 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         senha: _senhaController.text,
       );
 
-// --- NOVO PASSO: Converter CEP da Instituição em Coordenadas ---
+      // 4. Se a instituição selecionou o Estatuto Social, faz upload para o Amazon S3 Storage
+      String? urlEstatutoS3;
+      if (_estatutoSelecionado != null) {
+        try {
+          final String? caminhoLocal =
+              kIsWeb ? null : _estatutoSelecionado!.path;
+
+          urlEstatutoS3 = await _servicoAuth.enviarEstatutoSocialParaS3(
+            nomeOriginalArquivo: _estatutoSelecionado!.name,
+            bytesArquivo: _estatutoSelecionado!.bytes,
+            caminhoArquivoLocal: caminhoLocal,
+          );
+        } catch (erroS3) {
+          debugPrint('Aviso: Falha ao enviar Estatuto para o S3: $erroS3');
+        }
+      }
+
+      // Converter CEP da Instituição em Coordenadas
       double? latitudeBase;
       double? longitudeBase;
 
@@ -309,13 +354,12 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         setState(() => _carregandoCadastro = false);
         return; 
       }
-      // ---------------------------------------------------------------
 
-      // 4. Salvar dados completos do perfil na tabela User do AppSync GraphQL
+      // 5. Salvar dados completos do perfil na tabela User do AppSync GraphQL
       final textoTipos =
           _tiposSelecionados.map((tipo) => tipo.texto).join(', ');
 
-      await _servicoAuth.salvarPerfilUsuarioNoBanco(
+      final salvou = await _servicoAuth.salvarPerfilUsuarioNoBanco(
         perfil: 'instituicao',
         email: _emailController.text.trim(),
         telefone: _telefoneController.text.trim(),
@@ -323,18 +367,29 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
         nomeInstituicao: _nomeController.text.trim(),
         cnpj: _cnpjController.text.trim(),
         tipoEntidade: textoTipos,
+        estatutoSocialUrl: urlEstatutoS3,
         latitude: latitudeBase,
         longitude: longitudeBase,
       );
 
       if (!mounted) return;
 
-      scaffoldContext.showSnackBar(
-        const SnackBar(
-          content: Text('Cadastro institucional concluído com sucesso!'),
-          backgroundColor: CoresApp.verdeSucesso,
-        ),
-      );
+      if (salvou) {
+        scaffoldContext.showSnackBar(
+          const SnackBar(
+            content: Text('Cadastro institucional concluído com sucesso!'),
+            backgroundColor: CoresApp.verdeSucesso,
+          ),
+        );
+      } else {
+        scaffoldContext.showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Conta criada na AWS! Entre com seu e-mail e senha para acessar.'),
+            backgroundColor: CoresApp.amareloEscuro,
+          ),
+        );
+      }
 
       navContext.pushReplacement(
         MaterialPageRoute(builder: (_) => const InstituicaoTela()),
@@ -523,6 +578,65 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
             ],
           );
         }),
+        const SizedBox(height: 20),
+        const Text('Estatuto Social / Documentação Oficial (Opcional)',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        if (_estatutoSelecionado != null)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: CoresApp.verdeFundo,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: CoresApp.verdeSucesso),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.file_present_rounded,
+                    color: CoresApp.verdeSucesso),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _estatutoSelecionado!.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: CoresApp.verdeEscuro),
+                      ),
+                      Text(
+                        'Documento selecionado (${(_estatutoSelecionado!.size / 1024).toStringAsFixed(1)} KB)',
+                        style: const TextStyle(
+                            fontSize: 10, color: CoresApp.textoSecundario),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded,
+                      size: 18, color: CoresApp.vermelhoEscuro),
+                  onPressed: () => setState(() => _estatutoSelecionado = null),
+                ),
+              ],
+            ),
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: _selecionarEstatutoSocial,
+            icon: const Icon(Icons.upload_file_rounded, size: 18),
+            label: const Text('Anexar Estatuto Social (PDF, Word ou imagem)',
+                style: TextStyle(fontSize: 12)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: CoresApp.azulConfianca,
+              side: const BorderSide(color: CoresApp.borda),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            ),
+          ),
       ],
     );
   }

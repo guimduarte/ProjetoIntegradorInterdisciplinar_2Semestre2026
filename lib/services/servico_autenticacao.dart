@@ -283,6 +283,197 @@ class ServicoAutenticacao {
     }
   }
 
+  /// Obtém a URL pública/assinada temporária para visualizar ou baixar um arquivo do S3 Storage.
+  Future<String?> obterUrlDownloadPortfolio(String caminhoS3) async {
+    try {
+      final resultado = await Amplify.Storage.getUrl(
+        path: StoragePath.fromString(caminhoS3),
+        options: const StorageGetUrlOptions(
+          pluginOptions: S3GetUrlPluginOptions(
+            expiresIn: Duration(hours: 1),
+          ),
+        ),
+      ).result;
+      return resultado.url.toString();
+    } catch (erro) {
+      safePrint('Erro ao gerar URL do arquivo no S3: $erro');
+      return null;
+    }
+  }
+
+  /// Envia um arquivo de Estatuto Social (PDF, Word, Imagem) para a pasta `estatutos/*` do Amazon S3 Storage.
+  Future<String?> enviarEstatutoSocialParaS3({
+    required String nomeOriginalArquivo,
+    String? caminhoArquivoLocal,
+    Uint8List? bytesArquivo,
+  }) async {
+    try {
+      final nomeUnico =
+          '${DateTime.now().millisecondsSinceEpoch}_$nomeOriginalArquivo';
+      final caminhoS3 = 'estatutos/$nomeUnico';
+
+      AWSFile awsFile;
+      if (bytesArquivo != null) {
+        awsFile = AWSFile.fromData(bytesArquivo);
+      } else if (caminhoArquivoLocal != null && caminhoArquivoLocal.isNotEmpty) {
+        awsFile = AWSFile.fromPath(caminhoArquivoLocal);
+      } else {
+        safePrint('Aviso: Nenhum dado de arquivo fornecido para Estatuto Social.');
+        return null;
+      }
+
+      final resultadoUpload = await Amplify.Storage.uploadFile(
+        localFile: awsFile,
+        path: StoragePath.fromString(caminhoS3),
+      ).result.timeout(const Duration(seconds: 25));
+
+      safePrint(
+          'Estatuto Social enviado para o S3 com sucesso: ${resultadoUpload.uploadedItem.path}');
+      return resultadoUpload.uploadedItem.path;
+    } catch (erro) {
+      safePrint('Erro ao fazer upload do Estatuto Social no Amazon S3: $erro');
+      return null;
+    }
+  }
+
+  /// Obtém a URL pública/assinada temporária do Estatuto Social no S3 Storage.
+  Future<String?> obterUrlDownloadEstatuto(String caminhoS3) async {
+    return obterUrlDownloadPortfolio(caminhoS3);
+  }
+
+  /// Atualiza os dados de perfil de um operário na tabela `User` do AppSync GraphQL.
+  Future<bool> atualizarPerfilUsuarioNoBanco({
+    required String id,
+    String? nome,
+    String? telefone,
+    String? enderecoTexto,
+    int? raioAtendimentoKm,
+    List<String>? escopoOperario,
+    String? experienciasAnteriores,
+    String? portfolioUrl,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      const mutacaoAtualizarUsuarioGraphQL = '''
+        mutation AtualizarUsuario(\$input: UpdateUserInput!) {
+          updateUser(input: \$input) {
+            id
+            nome
+            telefone
+            endereco_texto
+            raio_atendimento_km
+            escopo_operario
+            experiencias_anteriores
+            portfolio_url
+            latitude
+            longitude
+          }
+        }
+      ''';
+
+      final dadosEntradaMap = <String, dynamic>{
+        'id': id,
+        if (nome != null) 'nome': nome.trim(),
+        if (telefone != null) 'telefone': telefone,
+        if (enderecoTexto != null) 'endereco_texto': enderecoTexto.trim(),
+        if (raioAtendimentoKm != null) 'raio_atendimento_km': raioAtendimentoKm,
+        if (escopoOperario != null) 'escopo_operario': escopoOperario,
+        if (experienciasAnteriores != null)
+          'experiencias_anteriores': experienciasAnteriores.trim(),
+        if (portfolioUrl != null) 'portfolio_url': portfolioUrl,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
+      };
+
+      final requisicaoGraphQL = GraphQLRequest<String>(
+        document: mutacaoAtualizarUsuarioGraphQL,
+        variables: {'input': dadosEntradaMap},
+      );
+
+      final resposta = await Amplify.API
+          .mutate(request: requisicaoGraphQL)
+          .response
+          .timeout(const Duration(seconds: 15));
+
+      if (resposta.hasErrors) {
+        safePrint(
+            'Erros no GraphQL ao atualizar usuário no DynamoDB: ${resposta.errors}');
+        return false;
+      }
+
+      safePrint('Perfil de usuário atualizado no DynamoDB com sucesso!');
+      await carregarPerfilUsuarioLogado();
+      return true;
+    } catch (erro) {
+      safePrint('Erro ao atualizar perfil no banco de dados DynamoDB: $erro');
+      return false;
+    }
+  }
+
+  /// Atualiza os dados de perfil de uma instituição na tabela `User` do AppSync GraphQL.
+  Future<bool> atualizarPerfilInstituicaoNoBanco({
+    required String id,
+    String? nomeInstituicao,
+    String? telefone,
+    String? enderecoTexto,
+    String? tipoEntidade,
+    String? estatutoSocialUrl,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      const mutacaoAtualizarInstituicaoGraphQL = '''
+        mutation AtualizarInstituicao(\$input: UpdateUserInput!) {
+          updateUser(input: \$input) {
+            id
+            nome_instituicao
+            telefone
+            endereco_texto
+            tipo_entidade
+            estatuto_social_url
+            latitude
+            longitude
+          }
+        }
+      ''';
+
+      final dadosEntradaMap = <String, dynamic>{
+        'id': id,
+        if (nomeInstituicao != null) 'nome_instituicao': nomeInstituicao.trim(),
+        if (telefone != null) 'telefone': telefone,
+        if (enderecoTexto != null) 'endereco_texto': enderecoTexto.trim(),
+        if (tipoEntidade != null) 'tipo_entidade': tipoEntidade,
+        if (estatutoSocialUrl != null) 'estatuto_social_url': estatutoSocialUrl,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
+      };
+
+      final requisicaoGraphQL = GraphQLRequest<String>(
+        document: mutacaoAtualizarInstituicaoGraphQL,
+        variables: {'input': dadosEntradaMap},
+      );
+
+      final resposta = await Amplify.API
+          .mutate(request: requisicaoGraphQL)
+          .response
+          .timeout(const Duration(seconds: 15));
+
+      if (resposta.hasErrors) {
+        safePrint(
+            'Erros no GraphQL ao atualizar instituição no DynamoDB: ${resposta.errors}');
+        return false;
+      }
+
+      safePrint('Perfil de instituição atualizado no DynamoDB com sucesso!');
+      await carregarPerfilUsuarioLogado();
+      return true;
+    } catch (erro) {
+      safePrint('Erro ao atualizar instituição no banco de dados DynamoDB: $erro');
+      return false;
+    }
+  }
+
   /// Salva os dados completos do usuário na tabela `User` do AppSync GraphQL.
   Future<bool> salvarPerfilUsuarioNoBanco({
     required String perfil, // 'operario' ou 'instituicao'
@@ -300,8 +491,9 @@ class ServicoAutenticacao {
     String? nomeInstituicao,
     String? cnpj,
     String? tipoEntidade,
-    double? latitude, //novos
-    double? longitude, //novos
+    String? estatutoSocialUrl,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       const mutacaoCriarUsuarioGraphQL = '''
@@ -313,19 +505,13 @@ class ServicoAutenticacao {
             nome
             nome_instituicao
             portfolio_url
+            estatuto_social_url
             latitude
             longitude
           }
         }
       ''';
 
-      /*
-      ---------------------IMPORTANTE---------------------
-      Observação importante: isto, abaixo, não é necessariamente uma forma robusta de gerar
-      IDs únicos em um sistema distribuído, porque duasexecuções podem ocorrer
-      no mesmo milissegundo. Se o backend já gera IDs, normalmente
-      seria preferível deixar o backend fazer isso.
-      */
       final idUnico = DateTime.now().millisecondsSinceEpoch.toString();
 
       final dadosEntradaMap = <String, dynamic>{
@@ -352,6 +538,8 @@ class ServicoAutenticacao {
         if (cnpj != null && cnpj.isNotEmpty) 'cnpj': cnpj,
         if (tipoEntidade != null && tipoEntidade.isNotEmpty)
           'tipo_entidade': tipoEntidade,
+        if (estatutoSocialUrl != null && estatutoSocialUrl.isNotEmpty)
+          'estatuto_social_url': estatutoSocialUrl,
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       };
@@ -359,7 +547,6 @@ class ServicoAutenticacao {
       final requisicaoGraphQL = GraphQLRequest<String>(
         document: mutacaoCriarUsuarioGraphQL,
         variables: {'input': dadosEntradaMap},
-        authorizationMode: APIAuthorizationType.apiKey,
       );
 
       final resposta = await Amplify.API
@@ -374,10 +561,7 @@ class ServicoAutenticacao {
       }
 
       safePrint('Perfil de usuário salvo no banco de dados DynamoDB com sucesso!');
-
-      // Carrega o perfil recém-criado na sessão ativa
       await carregarPerfilUsuarioLogado();
-
       return true;
     } catch (erro) {
       safePrint('Erro ao salvar perfil no banco de dados: $erro');
@@ -407,6 +591,7 @@ class ServicoAutenticacao {
               tipo_entidade
               experiencias_anteriores
               portfolio_url
+              estatuto_social_url
               latitude
               longitude
             }
@@ -421,7 +606,6 @@ class ServicoAutenticacao {
             'email': {'eq': email.trim()}
           }
         },
-        authorizationMode: APIAuthorizationType.apiKey,
       );
 
       final resposta = await Amplify.API

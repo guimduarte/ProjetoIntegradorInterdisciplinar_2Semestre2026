@@ -20,18 +20,22 @@ class OperarioTela extends StatefulWidget {
 class _OperarioTelaState extends State<OperarioTela> {
   int _index = 0;
 
-  static const _telasOperarios = [
-    OperarioTelaHome(),
-    OperarioTelaServicos(),
-    OperarioTelaBeneficios(),
-    TelaAvaliacoes(ehInstituicao: false),
-    TelaPerfil(ehInstituicao: false),
-  ];
+  void _mudarAba(int novoIndex) {
+    setState(() => _index = novoIndex);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final telasOperarios = [
+      OperarioTelaHome(onMudarAba: _mudarAba),
+      const OperarioTelaServicos(),
+      const OperarioTelaBeneficios(),
+      const TelaAvaliacoes(ehInstituicao: false),
+      const TelaPerfil(ehInstituicao: false),
+    ];
+
     return Scaffold(
-      body: IndexedStack(index: _index, children: _telasOperarios),
+      body: IndexedStack(index: _index, children: telasOperarios),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),

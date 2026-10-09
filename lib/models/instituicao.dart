@@ -35,27 +35,37 @@ extension TipoInstituicaoX on TipoInstituicao {
 
 /// Perfil completo do usuário 'Instituição' (ÉPICO 01 - US01.3).
 class PerfilInstituicao {
+  final String id;
   final String nome;
   final String emailInstitucional;
   final String telefone;
   final String cnpj;
   final String localizacao;
+  final double? latitude;
+  final double? longitude;
+  final String estatutoSocialUrl;
   final List<TipoInstituicao> tipos;
   final Map<TipoInstituicao, String> informacoesAdicionais;
   final double totalDoado;
   final int servicosPublicados;
 
   const PerfilInstituicao({
+    this.id = '',
     required this.nome,
     required this.emailInstitucional,
     required this.telefone,
     required this.cnpj,
     required this.localizacao,
+    this.latitude,
+    this.longitude,
+    this.estatutoSocialUrl = '',
     required this.tipos,
     required this.informacoesAdicionais,
     required this.totalDoado,
     required this.servicosPublicados,
   });
+
+  bool get estatutoAnexado => estatutoSocialUrl.isNotEmpty;
 }
 
 /// Perfil mock usado para simular a sessão autenticada da instituição

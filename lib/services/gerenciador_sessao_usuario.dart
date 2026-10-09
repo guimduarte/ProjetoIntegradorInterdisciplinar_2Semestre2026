@@ -61,7 +61,10 @@ class GerenciadorSessaoUsuario extends ChangeNotifier {
     final double raio =
         (mapa['raio_atendimento_km'] as num?)?.toDouble() ?? 10.0;
 
+    final String urlPortfolio = mapa['portfolio_url'] as String? ?? '';
+
     return PerfilOperario(
+      id: mapa['id'] as String? ?? '',
       nome: mapa['nome'] as String? ?? 'Operário Solidário',
       email: mapa['email'] as String? ?? '',
       telefone: mapa['telefone'] as String? ?? '',
@@ -69,8 +72,8 @@ class GerenciadorSessaoUsuario extends ChangeNotifier {
       localizacao: mapa['endereco_texto'] as String? ?? 'São Paulo, SP',
       latitude: lat,
       longitude: lon,
-      portfolioAnexado: mapa['portfolio_url'] != null &&
-          (mapa['portfolio_url'] as String).isNotEmpty,
+      portfolioAnexado: urlPortfolio.isNotEmpty,
+      portfolioUrl: urlPortfolio,
       experienciasAnteriores: mapa['experiencias_anteriores'] as String? ??
           'Sem experiências registradas',
       escopos: escoposLista.isEmpty ? ['Manutenção básica'] : escoposLista,
@@ -95,7 +98,11 @@ class GerenciadorSessaoUsuario extends ChangeNotifier {
       tiposEncontrados = [TipoInstituicao.outros];
     }
 
+    final double? lat = (mapa['latitude'] as num?)?.toDouble();
+    final double? lon = (mapa['longitude'] as num?)?.toDouble();
+
     return PerfilInstituicao(
+      id: mapa['id'] as String? ?? '',
       nome: mapa['nome_instituicao'] as String? ??
           mapa['nome'] as String? ??
           'Instituição Solidária',
@@ -103,6 +110,9 @@ class GerenciadorSessaoUsuario extends ChangeNotifier {
       telefone: mapa['telefone'] as String? ?? '',
       cnpj: mapa['cnpj'] as String? ?? '',
       localizacao: mapa['endereco_texto'] as String? ?? 'São Paulo, SP',
+      latitude: lat,
+      longitude: lon,
+      estatutoSocialUrl: mapa['estatuto_social_url'] as String? ?? '',
       tipos: tiposEncontrados,
       informacoesAdicionais: const {},
       totalDoado: 0.0,

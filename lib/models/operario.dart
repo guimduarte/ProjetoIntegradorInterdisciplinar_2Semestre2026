@@ -15,6 +15,7 @@ const List<String> escoposDisponiveis = [
 
 /// Perfil completo do usuário 'Operário' (ÉPICO 01 - US01.2).
 class PerfilOperario {
+  final String id;
   final String nome;
   final String email;
   final String telefone;
@@ -23,6 +24,7 @@ class PerfilOperario {
   final double? latitude;
   final double? longitude;
   final bool portfolioAnexado;
+  final String portfolioUrl;
   final String experienciasAnteriores;
   final List<String> escopos;
   final double raioAtendimentoKm;
@@ -31,6 +33,7 @@ class PerfilOperario {
   final double avaliacaoMedia;
 
   const PerfilOperario({
+    this.id = '',
     required this.nome,
     required this.email,
     required this.telefone,
@@ -39,6 +42,7 @@ class PerfilOperario {
     this.latitude,
     this.longitude,
     required this.portfolioAnexado,
+    this.portfolioUrl = '',
     required this.experienciasAnteriores,
     required this.escopos,
     required this.raioAtendimentoKm,
@@ -58,17 +62,21 @@ class PerfilOperario {
   }
 
   PerfilOperario copyWith({
+    String? id,
     String? nome,
     String? email,
     String? telefone,
     String? localizacao,
     double? latitude,
     double? longitude,
+    bool? portfolioAnexado,
+    String? portfolioUrl,
     double? raioAtendimentoKm,
     List<String>? escopos,
     String? experienciasAnteriores,
   }) {
     return PerfilOperario(
+      id: id ?? this.id,
       nome: nome ?? this.nome,
       email: email ?? this.email,
       telefone: telefone ?? this.telefone,
@@ -76,7 +84,8 @@ class PerfilOperario {
       localizacao: localizacao ?? this.localizacao,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
-      portfolioAnexado: portfolioAnexado,
+      portfolioAnexado: portfolioAnexado ?? this.portfolioAnexado,
+      portfolioUrl: portfolioUrl ?? this.portfolioUrl,
       experienciasAnteriores:
           experienciasAnteriores ?? this.experienciasAnteriores,
       escopos: escopos ?? this.escopos,

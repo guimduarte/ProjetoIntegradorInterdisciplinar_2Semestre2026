@@ -15,7 +15,9 @@ import 'operario_tela_de_detalhes_do_servico.dart';
 /// sem esconder por completo, os serviços fora do nível de
 /// experiência exigido.
 class OperarioTelaHome extends StatefulWidget {
-  const OperarioTelaHome({super.key});
+  final void Function(int index)? onMudarAba;
+
+  const OperarioTelaHome({super.key, this.onMudarAba});
 
   @override
   State<OperarioTelaHome> createState() => _OperarioTelaHomeState();
@@ -238,10 +240,16 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
         children: [
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                    builder: (_) => const OperarioTelaServicos()),
-              ),
+              onPressed: () {
+                if (widget.onMudarAba != null) {
+                  widget.onMudarAba!(1);
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => const OperarioTelaServicos()),
+                  );
+                }
+              },
               icon: const Icon(Icons.assignment_outlined, size: 18),
               label: const Text('Meus Serviços',
                   style: TextStyle(fontSize: 12)),
