@@ -1,4 +1,13 @@
 import 'package:flutter/material.dart';
+
+// Imports necessarios pra comunicar com a AWS
+import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_api/amplify_api.dart';
+
+// Imports dos modelos gerados pelo AMplify em '/models'
+import '../../models/amplify/ModelProvider.dart'; 
+import '../../models/amplify/Service.dart';
+
 import '../../models/nivel_experiencia.dart';
 import '../../models/ordem_servico.dart';
 import '../../services/gerenciador_sessao_usuario.dart';
@@ -182,26 +191,49 @@ class _InstituicaoTelaNovoServicoState
     );
   }
 
-  void _publicar() {
+  Future<void> _publicar() async {
     if (_tituloController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Informe um título para o serviço.')));
       return;
     }
+
     final instituicao = GerenciadorSessaoUsuario.instancia.instituicaoAtual;
-    final novo = OrdemServico(
-      id: 'novo-${DateTime.now().millisecondsSinceEpoch}',
-      titulo: _tituloController.text.trim(),
-      descricao: _descricaoController.text.trim().isEmpty
-          ? 'Sem descrição adicional.'
-          : _descricaoController.text.trim(),
-      escopo: _escopo,
-      marcadoComoAvancado: _marcarAvancado,
-      instituicaoNome: instituicao.nome,
-      instituicaoLocalizacao: instituicao.localizacao,
-      distanciaKm: 0,
-      horasEstimadas: double.tryParse(_horasController.text) ?? 4,
-    );
-    Navigator.of(context).pop(novo);
+    
+    // Mostra um loading visual (opcional)
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Publicando serviço na AWS...')));
+
+    try{
+      // 1. Cria o objeto do AWS Amplify (Substituindo o OrdemServico local)
+      final novoServicoAWS = Service(
+        instituicao_id: instituicao.id.isEmpty ? 'inst_001' : instituicao.id, // Fallback para o mock atual
+        titulo: _tituloController.text.trim(),
+        descricao: _descricaoController.text.trim().isEmpty
+            ? 'Sem descrição adicional.'
+            : _descricaoController.text.trim(),
+        escopo_servico: _escopo.texto, // Puxa a string da sua extension
+        complexidade: _complexidadeAtual.texto, 
+        nivel_experiencia_exigido: _complexidadeAtual.nivelMinimoExigido.texto,
+        endereco_texto: instituicao.localizacao,
+        status_servico: StatusServico.aberto.texto,
+        instituicao_nome: instituicao.nome,
+        // Você pode passar a latitude e longitude se já tiver
+      );
+
+      // 2. Envia a Mutação (Create) para a AWS
+      final request = ModelMutations.create(novoServicoAWS);
+      final response = await Amplify.API.mutate(request: request).response;
+
+      if (response.data != null) {
+        // Sucesso! Retorna 'true' para avisar a Home que um serviço foi criado
+        if (mounted) Navigator.of(context).pop(true);
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao salvar: \${e.message}')));
+      }    
+    }        
   }
 }
