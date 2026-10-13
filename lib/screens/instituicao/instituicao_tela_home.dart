@@ -1,3 +1,11 @@
+// Imports necessarios pra comunicar com a AWS
+import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_api/amplify_api.dart';
+
+// Imports dos modelos gerados pelo AMplify em '/models'
+import '../../models/amplify/ModelProvider.dart';
+import '../../models/amplify/Service.dart';
+
 import 'package:flutter/material.dart';
 import '../../models/instituicao.dart';
 import '../../models/ordem_servico.dart';
@@ -19,7 +27,44 @@ class InstituicaoTelaHome extends StatefulWidget {
 }
 
 class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
-  final List<OrdemServico> _publicados = List.of(mockOrdensServico.take(3));
+  List<OrdemServico> _servicosPublicados = [];
+  bool _carregando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _buscarServicosAWS();
+  }
+
+  // MÉTODO READ: Busca os serviços no DynamoDB
+  Future<void> _buscarServicosAWS() async {
+    setState(() => _carregando = true);
+
+    try {
+      // 1. Faz a requisição para listar os serviços no DynamoDB
+      final request = ModelQueries.list(Service.classType);
+      final response = await Amplify.API.query(request: request).response;
+
+      // 2. Extrai os dados brutos da resposta (Lista de objetos Service da AWS)
+      final servicosAWSBrutos = response.data?.items.whereType<Service>().toList() ?? [];
+
+      // 3. Converte a lista da AWS para a lista visual usando o factory 'fromAWS'
+      // O Flutter agora sabe que o retorno dessa lista é de <OrdemServico>
+      final servicosConvertidos = servicosAWSBrutos.map<OrdemServico>((servicoAWS) {
+        return OrdemServico.fromAWS(servicoAWS);
+      }).toList();
+      
+      // 4. Atualiza a tela com os serviços já convertidos e prontos para uso
+      setState(() {
+        _servicosPublicados = servicosConvertidos;
+        _carregando = false;
+      });
+      
+    } on ApiException catch (e) {
+      debugPrint('Erro ao buscar serviços na AWS: ${e.message}');
+      setState(() => _carregando = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,32 +80,46 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
               children: [
                 _buildHeader(context, instituicao),
                 _buildStats(instituicao),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                  child: const TituloSecao(titulo: 'Seus serviços publicados'),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 20, 16, 8),
+                  child: TituloSecao(titulo: 'Seus serviços publicados'),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: _publicados
-                        .map((s) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: CardServicos(servico: s),
-                            ))
-                        .toList(),
+                // Exibe loading ou a lista
+                if (_carregando)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(color: CoresApp.vermelhoAcao),
+                    )
+                  )
+                else if (_servicosPublicados.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('Nenhum serviço publicado ainda.'),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: _servicosPublicados.map((s) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        // Agora 's' é reconhecido corretamente como OrdemServico!
+                        child: CardServicos(servico: s), 
+                      )).toList(),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
-              final novo = await Navigator.of(context).push<OrdemServico>(
-                MaterialPageRoute(
-                    builder: (_) => const InstituicaoTelaNovoServico()),
+              // Navega para a tela de criar e aguarda o retorno (true se deu certo)
+              final recarregar = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(builder: (_) => const InstituicaoTelaNovoServico()),
               );
-              if (novo != null) {
-                setState(() => _publicados.insert(0, novo));
+              // Se o serviço foi criado na AWS, atualizamos a lista chamando o backend novamente
+              if (recarregar == true) {
+                _buscarServicosAWS();
               }
             },
             backgroundColor: CoresApp.vermelhoAcao,
@@ -72,7 +131,7 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
       },
     );
   }
-
+  
   Widget _buildHeader(BuildContext context, PerfilInstituicao instituicao) {
     return Container(
       width: double.infinity,

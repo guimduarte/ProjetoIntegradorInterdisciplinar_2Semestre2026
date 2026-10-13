@@ -6,6 +6,8 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_storage_s3/amplify_storage_s3.dart';
 import 'gerenciador_sessao_usuario.dart';
+import 'package:amplify_api/amplify_api.dart';
+import '../models/amplify/ModelProvider.dart';
 
 /// Classe que encapsula o resultado das operações de cadastro e login.
 class ResultadoAutenticacao {
@@ -43,7 +45,9 @@ class ServicoAutenticacao {
 
     try {
       final pluginAuth = AmplifyAuthCognito();
-      final pluginApi = AmplifyAPI();
+      final pluginApi = AmplifyAPI(
+        options: APIPluginOptions(modelProvider: ModelProvider.instance),
+      );
       final pluginStorage = AmplifyStorageS3();
 
       await Amplify.addPlugins([pluginAuth, pluginApi, pluginStorage]);

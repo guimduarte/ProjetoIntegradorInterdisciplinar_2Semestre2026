@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/tema_do_app.dart';
+import '../../models/amplify/ModelProvider.dart';
+import '../../models/amplify/Service.dart';
 import 'nivel_experiencia.dart';
 
 /// Nível de complexidade de um serviço (ÉPICO 03 - US03.1). Determina
@@ -218,6 +220,36 @@ class OrdemServico {
     this.horasRealizadas,
     this.pontosGanhos,
   });
+
+  factory OrdemServico.fromAWS(Service aws) {
+    // 1. Converte as Strings do banco de dados de volta para os seus Enums
+    final escopoConvertido = EscopoServico.values.firstWhere(
+      (e) => e.texto == aws.escopo_servico,
+      orElse: () => EscopoServico.manutencaoBasica, // fallback caso venha vazio
+    );
+
+    final statusConvertido = StatusServico.values.firstWhere(
+      (s) => s.texto == aws.status_servico,
+      orElse: () => StatusServico.aberto,
+    );
+
+    // 2. Retorna a sua classe populada com os dados da nuvem!
+    return OrdemServico(
+      id: aws.id,
+      titulo: aws.titulo ?? 'sem_titulo',
+      descricao: aws.descricao ?? 'Sem descrição',
+      escopo: escopoConvertido,
+      marcadoComoAvancado: aws.complexidade == 'Avançado',
+      instituicaoNome: aws.instituicao_nome ?? 'Instituição',
+      instituicaoLocalizacao: aws.endereco_texto ?? 'Localização não informada',
+      latitude: aws.latitude,
+      longitude: aws.longitude,
+      distanciaKm: 0.0, // Será calculado via GPS no futuro
+      horasEstimadas: 4.0, // Como não criamos esse campo no AWS ainda, deixamos um padrão
+      candidatos: 0, // A ser atualizado com a tabela Application
+      status: statusConvertido,
+    );
+  }
 
   ComplexidadeServico get complexidade {
     if (marcadoComoAvancado && escopo.permiteMarcarAvancado) {
