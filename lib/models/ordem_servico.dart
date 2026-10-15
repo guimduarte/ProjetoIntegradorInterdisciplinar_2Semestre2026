@@ -203,6 +203,9 @@ class OrdemServico {
   final double? horasRealizadas;
   final int? pontosGanhos;
 
+  // NOVO: Guarda o objeto original da AWS para facilitar Update/Delete
+  final Service? awsService;
+
   OrdemServico({
     required this.id,
     required this.titulo,
@@ -219,6 +222,7 @@ class OrdemServico {
     this.status = StatusServico.aberto,
     this.horasRealizadas,
     this.pontosGanhos,
+    this.awsService
   });
 
   factory OrdemServico.fromAWS(Service aws) {
@@ -248,6 +252,7 @@ class OrdemServico {
       horasEstimadas: 4.0, // Como não criamos esse campo no AWS ainda, deixamos um padrão
       candidatos: 0, // A ser atualizado com a tabela Application
       status: statusConvertido,
+      awsService: aws,
     );
   }
 
