@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../models/nivel_experiencia.dart';
 import '../../models/operario.dart';
 import '../../models/ordem_servico.dart';
@@ -10,10 +11,8 @@ import '../shared/tela_notificacoes.dart';
 import 'operario_tela_servicos.dart';
 import 'operario_tela_de_detalhes_do_servico.dart';
 
-/// Tela inicial do operário (ÉPICO 04): exibe apenas os serviços
-/// dentro do raio de deslocamento cadastrado (US04.1) e sinaliza,
-/// sem esconder por completo, os serviços fora do nível de
-/// experiência exigido.
+/// Tela inicial do operário (ÉPICO 04): exibe a lista de serviços
+/// consumida diretamente do modelo `OrdemServico`.
 class OperarioTelaHome extends StatefulWidget {
   final void Function(int index)? onMudarAba;
 
@@ -24,7 +23,41 @@ class OperarioTelaHome extends StatefulWidget {
 }
 
 class _OperarioTelaHomeState extends State<OperarioTelaHome> {
+  List<OrdemServico> _servicos = [];
+  bool _carregando = true;
   EscopoServico? _filtroEscopo;
+  String _termoBusca = '';
+  final TextEditingController _buscaController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarServicos();
+  }
+
+  @override
+  void dispose() {
+    _buscaController.dispose();
+    super.dispose();
+  }
+
+  /// Chama o método estático do modelo OrdemServico
+  Future<void> _carregarServicos() async {
+    setState(() => _carregando = true);
+
+    final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
+
+    // A busca na AWS e o cálculo Haversine acontecem dentro de OrdemServico!
+    final lista = await OrdemServico.buscarServicosAWS(
+      latitudeOperario: operario.latitude,
+      longitudeOperario: operario.longitude,
+    );
+
+    setState(() {
+      _servicos = lista;
+      _carregando = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,62 +65,93 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
       listenable: GerenciadorSessaoUsuario.instancia,
       builder: (context, _) {
         final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
-        final servicos = mockOrdensServico.where((s) {
-          if (_filtroEscopo == null) return true;
-          return s.escopo == _filtroEscopo;
+
+        final servicosFiltrados = _servicos.where((s) {
+          final atendeEscopo = _filtroEscopo == null || s.escopo == _filtroEscopo;
+          final atendeBusca = _termoBusca.isEmpty ||
+              s.titulo.toLowerCase().contains(_termoBusca.toLowerCase()) ||
+              s.descricao.toLowerCase().contains(_termoBusca.toLowerCase()) ||
+              s.instituicaoNome.toLowerCase().contains(_termoBusca.toLowerCase());
+
+          return atendeEscopo && atendeBusca;
         }).toList();
 
         return Scaffold(
           body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 20),
-              children: [
-                _buildHeader(context, operario),
-                _buildImpactBanner(operario),
-                _buildQuickAccess(context),
-                _buildScopeFilter(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                  child: TituloSecao(
-                    titulo:
-                        'Serviços no seu raio (${operario.raioAtendimentoKm.toStringAsFixed(0)} km)',
+            child: RefreshIndicator(
+              onRefresh: _carregarServicos,
+              color: CoresApp.vermelhoAcao,
+              child: ListView(
+                padding: const EdgeInsets.only(bottom: 20),
+                children: [
+                  _buildHeader(context, operario),
+                  _buildImpactBanner(operario),
+                  _buildQuickAccess(context),
+                  _buildScopeFilter(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                    child: TituloSecao(
+                      titulo:
+                          'Serviços no seu raio (${operario.raioAtendimentoKm.toStringAsFixed(0)} km)',
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: servicos.map((s) {
-                      final estaApto = s.operarioEstaApto(
-                        operario.raioAtendimentoKm,
-                        operario.servicosRealizados,
-                      );
-                      final dentroDoRaio =
-                          s.distanciaKm <= operario.raioAtendimentoKm;
-                      String? motivo;
-                      if (!dentroDoRaio) {
-                        motivo = 'Fora do seu raio de atendimento';
-                      } else if (!estaApto) {
-                        motivo =
-                            'Requer nível ${s.complexidade.nivelMinimoExigido.texto}';
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: CardServicos(
-                          servico: s,
-                          locked: !estaApto,
-                          lockedReason: motivo,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  OperarioTelaDeDetalhesDoServico(servico: s),
-                            ),
-                          ),
+                  if (_carregando)
+                    const Center(
+                      //padding: EdgeInsets.all(30.0),
+                      child: CircularProgressIndicator(color: CoresApp.vermelhoAcao),
+                    )
+                  else if (servicosFiltrados.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: Center(
+                        child: Text(
+                          'Nenhum serviço disponível no momento.',
+                          style: TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: servicosFiltrados.map((s) {
+                          final estaApto = s.operarioEstaApto(
+                            operario.raioAtendimentoKm,
+                            operario.servicosRealizados,
+                          );
+                          final dentroDoRaio =
+                              s.distanciaKm <= operario.raioAtendimentoKm;
+                          String? motivo;
+                          if (!dentroDoRaio) {
+                            motivo = 'Fora do seu raio de atendimento';
+                          } else if (!estaApto) {
+                            motivo =
+                                'Requer nível ${s.complexidade.nivelMinimoExigido.texto}';
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: CardServicos(
+                              servico: s,
+                              locked: !estaApto,
+                              lockedReason: motivo,
+                              onTap: () async {
+                                final candidatou = await Navigator.of(context).push<bool>(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        OperarioTelaDeDetalhesDoServico(servico: s),
+                                  ),
+                                );
+                                if (candidatou == true) {
+                                  _carregarServicos();
+                                }
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         );
@@ -182,10 +246,21 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
             ],
           ),
           const SizedBox(height: 12),
-          const TextField(
+          TextField(
+            controller: _buscaController,
+            onChanged: (valor) => setState(() => _termoBusca = valor),
             decoration: InputDecoration(
               hintText: 'Buscar serviço solidário',
-              prefixIcon: Icon(Icons.search, color: CoresApp.textoSecundario),
+              prefixIcon: const Icon(Icons.search, color: CoresApp.textoSecundario),
+              suffixIcon: _termoBusca.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        _buscaController.clear();
+                        setState(() => _termoBusca = '');
+                      },
+                    )
+                  : null,
             ),
           ),
         ],

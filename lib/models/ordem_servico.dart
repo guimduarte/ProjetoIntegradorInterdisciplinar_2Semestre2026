@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_api/amplify_api.dart';
+
 import '../theme/tema_do_app.dart';
 import '../../models/amplify/ModelProvider.dart';
 import '../../models/amplify/Service.dart';
+import '../services/servico_haversine.dart';
 import 'nivel_experiencia.dart';
 
 /// Nível de complexidade de um serviço (ÉPICO 03 - US03.1). Determina
@@ -77,11 +81,7 @@ extension ComplexidadeServicoX on ComplexidadeServico {
   }
 }
 
-/// Tipo de serviço dentro do escopo solidário (US03.1). Cada opção
-/// mapeia automaticamente para um nível de complexidade — a
-/// classificação "Avançado" é aplicada quando a instituição sinaliza
-/// um serviço 'Difícil' como especialmente extenso/urgente, exigindo
-/// operários com 5+ serviços realizados.
+/// Tipo de serviço dentro do escopo solidário (US03.1).
 enum EscopoServico {
   instalacaoMoveis,
   manutencaoBasica,
@@ -136,8 +136,6 @@ extension EscopoServicoX on EscopoServico {
     }
   }
 
-  /// Classificação automática de complexidade a partir do escopo
-  /// (US03.1: "Sistema categoriza automaticamente a complexidade").
   ComplexidadeServico get complexidadeBase {
     switch (this) {
       case EscopoServico.instalacaoMoveis:
@@ -154,8 +152,6 @@ extension EscopoServicoX on EscopoServico {
     }
   }
 
-  /// Somente escopos 'Difícil' podem ser reclassificados como
-  /// 'Avançado' pela instituição no momento da publicação.
   bool get permiteMarcarAvancado => complexidadeBase == ComplexidadeServico.dificil;
 }
 
@@ -203,7 +199,6 @@ class OrdemServico {
   final double? horasRealizadas;
   final int? pontosGanhos;
 
-  // NOVO: Guarda o objeto original da AWS para facilitar Update/Delete
   final Service? awsService;
 
   OrdemServico({
@@ -216,20 +211,19 @@ class OrdemServico {
     required this.instituicaoLocalizacao,
     this.latitude,
     this.longitude,
-    this.distanciaKm = 0.0, //valor padrao para calculo
+    this.distanciaKm = 0.0,
     required this.horasEstimadas,
     this.candidatos = 0,
     this.status = StatusServico.aberto,
     this.horasRealizadas,
     this.pontosGanhos,
-    this.awsService
+    this.awsService,
   });
 
   factory OrdemServico.fromAWS(Service aws) {
-    // 1. Converte as Strings do banco de dados de volta para os seus Enums
     final escopoConvertido = EscopoServico.values.firstWhere(
       (e) => e.texto == aws.escopo_servico,
-      orElse: () => EscopoServico.manutencaoBasica, // fallback caso venha vazio
+      orElse: () => EscopoServico.manutencaoBasica,
     );
 
     final statusConvertido = StatusServico.values.firstWhere(
@@ -237,7 +231,6 @@ class OrdemServico {
       orElse: () => StatusServico.aberto,
     );
 
-    // 2. Retorna a sua classe populada com os dados da nuvem!
     return OrdemServico(
       id: aws.id,
       titulo: aws.titulo ?? 'sem_titulo',
@@ -248,9 +241,9 @@ class OrdemServico {
       instituicaoLocalizacao: aws.endereco_texto ?? 'Localização não informada',
       latitude: aws.latitude,
       longitude: aws.longitude,
-      distanciaKm: 0.0, // Será calculado via GPS no futuro
-      horasEstimadas: 4.0, // Como não criamos esse campo no AWS ainda, deixamos um padrão
-      candidatos: 0, // A ser atualizado com a tabela Application
+      distanciaKm: 0.0,
+      horasEstimadas: 4.0,
+      candidatos: 0,
       status: statusConvertido,
       awsService: aws,
     );
@@ -263,8 +256,6 @@ class OrdemServico {
     return escopo.complexidadeBase;
   }
 
-  /// Se o operário logado no protótipo atende ao raio e ao nível de
-  /// experiência mínimo exigido para este serviço.
   bool operarioEstaApto(double raioOperarioKm, int servicosRealizados) {
     final dentroDoRaio = distanciaKm <= raioOperarioKm;
     final nivel = NivelExperienciaX.deServicosRealizados(servicosRealizados);
@@ -272,127 +263,48 @@ class OrdemServico {
         nivel.minServicosRealizados >= complexidade.nivelMinimoExigido.minServicosRealizados;
     return dentroDoRaio && experienciaOk;
   }
+
+  // =========================================================================
+  // MÉTODO COMPARTIMENTALIZADO: BUSCA NA AWS + CÁLCULO DE DISTÂNCIA HAVERSINE
+  // =========================================================================
+
+  /// Consulta todos os serviços no DynamoDB via AWS Amplify e calcula a
+  /// distância geográfica exata até o operário logado se as coordenadas existirem.
+  static Future<List<OrdemServico>> buscarServicosAWS({
+    double? latitudeOperario,
+    double? longitudeOperario,
+  }) async {
+    try {
+      final request = ModelQueries.list(Service.classType);
+      final response = await Amplify.API.query(request: request).response;
+      final itensNuvem = response.data?.items.whereType<Service>().toList() ?? [];
+
+      return itensNuvem.map<OrdemServico>((servicoAWS) {
+        final ordem = OrdemServico.fromAWS(servicoAWS);
+
+        // Se houver coordenadas da instituição e do operário, calcula a distância real
+        if (servicoAWS.latitude != null &&
+            servicoAWS.longitude != null &&
+            latitudeOperario != null &&
+            longitudeOperario != null) {
+          ordem.distanciaKm = ServicoHaversine.calcularDistanciaKm(
+            latitudeOperario,
+            longitudeOperario,
+            servicoAWS.latitude!,
+            servicoAWS.longitude!,
+          );
+        }
+
+        return ordem;
+      }).toList();
+    } on ApiException catch (e) {
+      debugPrint('Erro ao buscar serviços na AWS (OrdemServico.buscarServicosAWS): ${e.message}');
+      return [];
+    }
+  }
 }
 
-/// Lista mock de serviços publicados, usada para popular o feed do
-/// operário e o painel da instituição no protótipo.
-final List<OrdemServico> mockOrdensServico = [
-  OrdemServico(
-    id: 's1',
-    titulo: 'Reparo de infiltração no telhado',
-    descricao:
-        'A creche possui um vazamento no telhado do refeitório que precisa de reparo urgente antes das chuvas de verão.',
-    escopo: EscopoServico.manutencaoBasica,
-    instituicaoNome: 'Creche Sementinha do Bem',
-    instituicaoLocalizacao: 'São Bernardo do Campo, SP',
-    distanciaKm: 2.3,
-    horasEstimadas: 4,
-    candidatos: 2,
-  ),
-  OrdemServico(
-    id: 's2',
-    titulo: 'Pintura do salão comunitário',
-    descricao:
-        'Precisamos repintar as paredes internas do salão que recebe cerca de 80 famílias por mês para distribuição de doações.',
-    escopo: EscopoServico.pintura,
-    instituicaoNome: 'Associação Mãos que Ajudam',
-    instituicaoLocalizacao: 'São Bernardo do Campo, SP',
-    distanciaKm: 3.1,
-    horasEstimadas: 8,
-    candidatos: 5,
-  ),
-  OrdemServico(
-    id: 's3',
-    titulo: 'Troca de fiação elétrica exposta',
-    descricao:
-        'A instalação elétrica do abrigo está com fiação exposta em três salas, representando risco aos acolhidos.',
-    escopo: EscopoServico.eletricaEspecializada,
-    marcadoComoAvancado: true,
-    instituicaoNome: 'Abrigo Novo Amanhecer',
-    instituicaoLocalizacao: 'Santo André, SP',
-    distanciaKm: 6.8,
-    horasEstimadas: 6,
-    candidatos: 0,
-  ),
-  OrdemServico(
-    id: 's4',
-    titulo: 'Montagem de estantes na biblioteca comunitária',
-    descricao:
-        'Recebemos uma doação de estantes de livros desmontadas e precisamos de ajuda para montá-las e fixá-las.',
-    escopo: EscopoServico.instalacaoMoveis,
-    instituicaoNome: 'Biblioteca Comunitária Ler é Viver',
-    instituicaoLocalizacao: 'São Bernardo do Campo, SP',
-    distanciaKm: 1.4,
-    horasEstimadas: 3,
-    candidatos: 3,
-  ),
-  OrdemServico(
-    id: 's5',
-    titulo: 'Construção de rampa de acessibilidade',
-    descricao:
-        'A entrada principal do centro comunitário não possui rampa de acesso para cadeirantes e idosos.',
-    escopo: EscopoServico.construcaoCivil,
-    instituicaoNome: 'Centro Comunitário Vida Nova',
-    instituicaoLocalizacao: 'Diadema, SP',
-    distanciaKm: 9.5,
-    horasEstimadas: 16,
-    candidatos: 1,
-  ),
-  OrdemServico(
-    id: 's6',
-    titulo: 'Limpeza pós-obra do refeitório',
-    descricao:
-        'Após uma pequena reforma, o refeitório precisa de limpeza pesada antes da reabertura para as crianças.',
-    escopo: EscopoServico.limpeza,
-    instituicaoNome: 'Creche Sementinha do Bem',
-    instituicaoLocalizacao: 'São Bernardo do Campo, SP',
-    distanciaKm: 2.3,
-    horasEstimadas: 5,
-    candidatos: 4,
-  ),
-];
-
-/// Serviços já concluídos pelo operário (aba "Meus Serviços" > "Realizados").
-final List<OrdemServico> mockServicosRealizados = [
-  OrdemServico(
-    id: 'r1',
-    titulo: 'Reparo em vazamento de cozinha',
-    descricao: 'Substituição de conexões hidráulicas com vazamento na pia industrial.',
-    escopo: EscopoServico.eletricaBasica,
-    instituicaoNome: 'Cozinha Solidária Pão Nosso',
-    instituicaoLocalizacao: 'São Bernardo do Campo, SP',
-    distanciaKm: 1.8,
-    horasEstimadas: 3,
-    status: StatusServico.concluido,
-    horasRealizadas: 3.5,
-    pontosGanhos: 18,
-  ),
-  OrdemServico(
-    id: 'r2',
-    titulo: 'Reforma de piso da sala de aula',
-    descricao: 'Nivelamento e reassentamento de pisos soltos na sala de reforço escolar.',
-    escopo: EscopoServico.construcaoCivil,
-    instituicaoNome: 'Projeto Educar Mais',
-    instituicaoLocalizacao: 'São Bernardo do Campo, SP',
-    distanciaKm: 4.2,
-    horasEstimadas: 10,
-    status: StatusServico.concluido,
-    horasRealizadas: 9,
-    pontosGanhos: 90,
-  ),
-];
-
-/// Serviço aceito pelo operário e em andamento (aba "Meus Serviços" > "Aceitos").
-final List<OrdemServico> mockServicosAceitos = [
-  OrdemServico(
-    id: 'a1',
-    titulo: 'Instalação de portas do dormitório',
-    descricao: 'Instalação de 4 portas novas doadas para o dormitório do abrigo.',
-    escopo: EscopoServico.carpintaria,
-    instituicaoNome: 'Abrigo Novo Amanhecer',
-    instituicaoLocalizacao: 'Santo André, SP',
-    distanciaKm: 6.8,
-    horasEstimadas: 5,
-    status: StatusServico.aceito,
-  ),
-];
+/// Mocks mantidos para retrocompatibilidade em testes offline
+//final List<OrdemServico> mockOrdensServico = [...];
+//final List<OrdemServico> mockServicosRealizados = [...];
+//final List<OrdemServico> mockServicosAceitos = [...];
