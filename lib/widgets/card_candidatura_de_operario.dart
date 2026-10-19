@@ -43,7 +43,9 @@ class CardCandidaturaDeOperario extends StatelessWidget {
                 radius: 20,
                 backgroundColor: CoresApp.azulFundo,
                 child: Text(
-                  candidatura.operarioNome.substring(0, 1),
+                  candidatura.operarioNome.isNotEmpty
+                      ? candidatura.operarioNome.substring(0, 1)
+                      : 'O',
                   style: const TextStyle(
                     color: CoresApp.azulClaro,
                     fontWeight: FontWeight.w700,
