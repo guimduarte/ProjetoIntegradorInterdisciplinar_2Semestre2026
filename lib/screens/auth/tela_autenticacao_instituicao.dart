@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../models/instituicao.dart';
@@ -520,7 +521,8 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
           decoration: const InputDecoration(
             labelText: 'CEP (Apenas números)',
             hintText:'00000-000'),
-          validator: ValidadoresCamposCadastro.obrigatorio,
+          validator: ValidadoresCamposCadastro.cep,
+          inputFormatters: [FormatadorCep()],
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),

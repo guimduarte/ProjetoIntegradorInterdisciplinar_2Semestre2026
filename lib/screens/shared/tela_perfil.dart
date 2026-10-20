@@ -631,7 +631,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
         controller: _cepController,
         decoration: const InputDecoration(
             labelText: 'CEP (Apenas números)', hintText: '00000-000'),
-        validator: ValidadoresCamposCadastro.obrigatorio,
+        validator: ValidadoresCamposCadastro.cep,
+        inputFormatters: [FormatadorCep()],
         keyboardType: TextInputType.number,
       ),
       const SizedBox(height: 16),
@@ -879,7 +880,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
         controller: _cepController,
         decoration: const InputDecoration(
             labelText: 'CEP (Apenas números)', hintText: '00000-000'),
-        validator: ValidadoresCamposCadastro.obrigatorio,
+        validator: ValidadoresCamposCadastro.cep,
+        inputFormatters: [FormatadorCep()],
         keyboardType: TextInputType.number,
       ),
       const SizedBox(height: 16),

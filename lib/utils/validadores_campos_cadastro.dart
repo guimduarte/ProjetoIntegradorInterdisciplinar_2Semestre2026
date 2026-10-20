@@ -131,6 +131,47 @@ class ValidadoresCamposCadastro {
     }
     return null;
   }
+
+  static String? cep(String? valor) {
+    if (valor == null || valor.isEmpty) {
+      return 'Campo obrigatório';
+    }
+
+    final cepLimpo = valor.replaceAll(RegExp(r'\D'), '');
+    if (cepLimpo.length != 8 || RegExp(r'^(?:0{8}|00000000)$').hasMatch(cepLimpo)) {
+      return 'CEP inválido';
+    }
+
+    return null;
+  }
+}
+
+/// Formatador dinâmico de CEP com máscara 00000-000.
+class FormatadorCep extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitos = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digitos.length > 8) {
+      return oldValue;
+    }
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < digitos.length; i++) {
+      if (i == 5) {
+        buffer.write('-');
+      }
+      buffer.write(digitos[i]);
+    }
+
+    final textoFormatado = buffer.toString();
+    return TextEditingValue(
+      text: textoFormatado,
+      selection: TextSelection.collapsed(offset: textoFormatado.length),
+    );
+  }
 }
 
 /// Formatador dinâmico de telefone que suporta tanto telefone fixo (10 dígitos: (XX) XXXX-XXXX)
