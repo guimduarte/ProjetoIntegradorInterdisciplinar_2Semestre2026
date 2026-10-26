@@ -3,25 +3,27 @@ import '../models/nivel_experiencia.dart';
 import '../models/candidatura_de_servico.dart';
 import '../theme/tema_do_app.dart';
 
-/// Card exibido na central de chamados da instituição com a
-/// visualização restrita do perfil do operário candidato: apenas
-/// Nome, E-mail, Telefone, Escopo de Serviço e Nível de Experiência
-/// (US03.2), com ações de Aceitar/Recusar.
 class CardCandidaturaDeOperario extends StatelessWidget {
   final CandidaturaDeServico candidatura;
   final VoidCallback onAceitar;
   final VoidCallback onRecusar;
+  final VoidCallback? onIniciarServico;
+  final VoidCallback? onCancelar;
 
   const CardCandidaturaDeOperario({
     super.key,
     required this.candidatura,
     required this.onAceitar,
     required this.onRecusar,
+    this.onIniciarServico,
+    this.onCancelar,
   });
 
   @override
   Widget build(BuildContext context) {
-    final decidido = candidatura.status != StatusCandidatura.pendente;
+    final bool pendente = candidatura.status == StatusCandidatura.pendente;
+    final bool aceito = candidatura.status == StatusCandidatura.aceita;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -72,23 +74,19 @@ class CardCandidaturaDeOperario extends StatelessWidget {
                   ],
                 ),
               ),
-              if (decidido)
+              if (!pendente)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: candidatura.status == StatusCandidatura.aceita
-                        ? CoresApp.verdeFundo
-                        : CoresApp.vermelhoFundo,
+                    color: aceito ? CoresApp.verdeFundo : CoresApp.vermelhoFundo,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    candidatura.status == StatusCandidatura.aceita ? 'Aceita' : 'Recusada',
+                    aceito ? 'Aceita' : 'Recusada',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: candidatura.status == StatusCandidatura.aceita
-                          ? CoresApp.verdeEscuro
-                          : CoresApp.vermelhoEscuro,
+                      color: aceito ? CoresApp.verdeEscuro : CoresApp.vermelhoEscuro,
                     ),
                   ),
                 ),
@@ -100,7 +98,9 @@ class CardCandidaturaDeOperario extends StatelessWidget {
           _linha(Icons.call_outlined, candidatura.operarioTelefone),
           const SizedBox(height: 4),
           _linha(Icons.workspace_premium_outlined, candidatura.nivelExperiencia.texto),
-          if (!decidido) ...[
+          
+          // Ações para Candidatura Pendente
+          if (pendente) ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -125,6 +125,34 @@ class CardCandidaturaDeOperario extends StatelessWidget {
                     ),
                     child: const Text('Aceitar', style: TextStyle(fontSize: 12)),
                   ),
+                ),
+              ],
+            ),
+          ],
+
+          // Ações para Candidatura Aceita (Iniciar / Cancelar)
+          if (aceito) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton(
+                  onPressed: onCancelar,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: CoresApp.vermelhoEscuro,
+                    side: const BorderSide(color: CoresApp.vermelhoEscuro),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  child: const Text('Cancelar', style: TextStyle(fontSize: 12)),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: onIniciarServico,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: CoresApp.verdeSucesso,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  child: const Text('Iniciar serviço', style: TextStyle(fontSize: 12, color: Colors.white)),
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maos_solidarias/screens/instituicao/modal_controle_chamado.dart';
 import '../../models/candidatura_de_servico.dart';
 import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
@@ -127,9 +128,24 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: CardCandidaturaDeOperario(
                                   candidatura: a,
-                                  onAceitar: () {},
-                                  onRecusar: () {},
-                                ),
+                                  onAceitar: () => _decidir(a, StatusCandidatura.aceita),
+                                  onRecusar: () => _decidir(a, StatusCandidatura.recusada),
+                                  onCancelar: () => _decidir(a, StatusCandidatura.recusada),
+                                  onIniciarServico: () {
+                                    ModalControleChamado.exibir(
+                                      context,
+                                      candidatura: a,
+                                      horasEstimadas: 4.0, // Horas da ordem de serviço
+                                      onEncerrar: (horasTrabalhadas, pontosGanhos) async {
+                                        // Atualiza os pontos na AWS / Banco
+                                        await CandidaturaDeServico.atualizarStatusAWS(
+                                          candidatura: a,
+                                          novoStatus: StatusCandidatura.aceita,
+                                        );
+                                      },
+                                    );
+                                  },
+                                )
                               )),
                         ],
                       ],
