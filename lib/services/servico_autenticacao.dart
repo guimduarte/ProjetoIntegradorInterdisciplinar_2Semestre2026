@@ -208,6 +208,7 @@ class ServicoAutenticacao {
   Future<ResultadoAutenticacao> fazerLogin({
     required String email,
     required String senha,
+    String? tipoEsperado,
   }) async {
     try {
       final resultado = await Amplify.Auth.signIn(
@@ -218,6 +219,29 @@ class ServicoAutenticacao {
       if (resultado.isSignedIn) {
         // Busca e popula os dados reais do perfil no GerenciadorSessaoUsuario
         final tipoPerfil = await carregarPerfilUsuarioLogado();
+
+        if (tipoEsperado != null) {
+          if (tipoPerfil == null) {
+            await fazerLogout();
+            return ResultadoAutenticacao(
+              sucesso: false,
+              mensagemErro:
+                  'Esta conta não está vinculada a um perfil de ${tipoEsperado == 'operario' ? 'operário' : 'instituição'}.',
+            );
+          }
+
+          if (tipoPerfil != tipoEsperado) {
+            await fazerLogout();
+            final mensagem = tipoEsperado == 'operario'
+                ? 'Este e-mail pertence a uma instituição. Faça login na tela de Instituição.'
+                : 'Este e-mail pertence a um operário. Faça login na tela de Operário.';
+
+            return ResultadoAutenticacao(
+              sucesso: false,
+              mensagemErro: mensagem,
+            );
+          }
+        }
 
         return ResultadoAutenticacao(
           sucesso: true,

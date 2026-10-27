@@ -167,7 +167,38 @@ class _TelaPerfilState extends State<TelaPerfil> {
     }
   }
 
-  void _removerPortfolio() {
+  Future<bool> _confirmarRemocaoArquivo(String nomeArquivo) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: Text('Remover $nomeArquivo?'),
+        content: Text(
+          'Deseja remover o $nomeArquivo do perfil? A alteração só será '
+          'aplicada depois de salvar as alterações.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, false),
+            child: const Text('Manter'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(contexto, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: CoresApp.vermelhoAcao,
+              foregroundColor: CoresApp.branco,
+            ),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+
+    return confirmar == true;
+  }
+
+  Future<void> _removerPortfolio() async {
+    if (!await _confirmarRemocaoArquivo('portfólio') || !mounted) return;
+
     setState(() {
       _portfolioUrlS3 = '';
       _novoArquivoPortfolio = null;
@@ -243,7 +274,9 @@ class _TelaPerfilState extends State<TelaPerfil> {
     }
   }
 
-  void _removerEstatutoSocial() {
+  Future<void> _removerEstatutoSocial() async {
+    if (!await _confirmarRemocaoArquivo('estatuto social') || !mounted) return;
+
     setState(() {
       _estatutoUrlS3 = '';
       _novoArquivoEstatuto = null;
@@ -267,8 +300,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
     setState(() => _carregandoSalvar = true);
 
     try {
-      final operarioLogado =
-          GerenciadorSessaoUsuario.instancia.operarioLogado;
+      final operarioLogado = GerenciadorSessaoUsuario.instancia.operarioLogado;
       final instituicaoLogada =
           GerenciadorSessaoUsuario.instancia.instituicaoLogada;
 
@@ -281,7 +313,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
       if (idUsuario.isEmpty) {
         scaffoldContext.showSnackBar(
           const SnackBar(
-            content: Text('Erro: perfil do usuário não encontrado para atualização.'),
+            content: Text(
+                'Erro: perfil do usuário não encontrado para atualização.'),
             backgroundColor: CoresApp.vermelhoEscuro,
           ),
         );
@@ -376,9 +409,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
           }
         }
 
-        final textoTipos = _tiposSelecionadosInstituicao
-            .map((tipo) => tipo.texto)
-            .join(', ');
+        final textoTipos =
+            _tiposSelecionadosInstituicao.map((tipo) => tipo.texto).join(', ');
 
         final atualizou = await _servicoAuth.atualizarPerfilInstituicaoNoBanco(
           id: idUsuario,
@@ -409,7 +441,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
         } else {
           scaffoldContext.showSnackBar(
             const SnackBar(
-              content: Text('Não foi possível atualizar a instituição no banco.'),
+              content:
+                  Text('Não foi possível atualizar a instituição no banco.'),
               backgroundColor: CoresApp.vermelhoEscuro,
             ),
           );
@@ -572,8 +605,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
                       fontSize: 15, fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: CoresApp.vermelhoFundo,
                   borderRadius: BorderRadius.circular(8),
@@ -605,8 +637,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
         controller: _emailController,
         readOnly: true,
         decoration: const InputDecoration(
-            labelText: 'E-mail (Leitura)',
-            fillColor: CoresApp.bloqueadoFundo),
+            labelText: 'E-mail (Leitura)', fillColor: CoresApp.bloqueadoFundo),
       ),
       const SizedBox(height: 12),
       TextFormField(
@@ -623,8 +654,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
         controller: _cpfCnpjController,
         readOnly: true,
         decoration: const InputDecoration(
-            labelText: 'CPF (Leitura)',
-            fillColor: CoresApp.bloqueadoFundo),
+            labelText: 'CPF (Leitura)', fillColor: CoresApp.bloqueadoFundo),
       ),
       const SizedBox(height: 12),
       TextFormField(
@@ -703,7 +733,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.file_present_rounded, color: CoresApp.verdeSucesso),
+            const Icon(Icons.file_present_rounded,
+                color: CoresApp.verdeSucesso),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -806,7 +837,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
                   child: OutlinedButton.icon(
                     onPressed: _selecionarNovoPortfolio,
                     icon: const Icon(Icons.edit_rounded, size: 16),
-                    label: const Text('Alterar', style: TextStyle(fontSize: 11)),
+                    label:
+                        const Text('Alterar', style: TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: CoresApp.amareloEscuro,
                       side: const BorderSide(color: CoresApp.amareloSolidario),
@@ -872,8 +904,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
         controller: _cpfCnpjController,
         readOnly: true,
         decoration: const InputDecoration(
-            labelText: 'CNPJ (Leitura)',
-            fillColor: CoresApp.bloqueadoFundo),
+            labelText: 'CNPJ (Leitura)', fillColor: CoresApp.bloqueadoFundo),
       ),
       const SizedBox(height: 12),
       TextFormField(
@@ -929,7 +960,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.file_present_rounded, color: CoresApp.verdeSucesso),
+            const Icon(Icons.file_present_rounded,
+                color: CoresApp.verdeSucesso),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -1032,7 +1064,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
                   child: OutlinedButton.icon(
                     onPressed: _selecionarNovoEstatutoSocial,
                     icon: const Icon(Icons.edit_rounded, size: 16),
-                    label: const Text('Alterar', style: TextStyle(fontSize: 11)),
+                    label:
+                        const Text('Alterar', style: TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: CoresApp.amareloEscuro,
                       side: const BorderSide(color: CoresApp.amareloSolidario),

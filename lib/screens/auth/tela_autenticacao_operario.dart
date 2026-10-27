@@ -91,6 +91,7 @@ class _OperarioLoginFormularioState extends State<_OperarioLoginFormulario> {
     final resultado = await _servicoAuth.fazerLogin(
       email: _emailController.text,
       senha: _senhaController.text,
+      tipoEsperado: 'operario',
     );
 
     if (!mounted) return;

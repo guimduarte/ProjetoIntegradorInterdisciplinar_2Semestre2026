@@ -12,7 +12,8 @@ class InstituicaoTelaChamados extends StatefulWidget {
   const InstituicaoTelaChamados({super.key});
 
   @override
-  State<InstituicaoTelaChamados> createState() => _InstituicaoTelaChamadosState();
+  State<InstituicaoTelaChamados> createState() =>
+      _InstituicaoTelaChamadosState();
 }
 
 class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
@@ -40,21 +41,65 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
     });
   }
 
-  Future<void> _decidir(CandidaturaDeServico a, StatusCandidatura status) async {
+  Future<void> _decidir(
+      CandidaturaDeServico a, StatusCandidatura status) async {
+    final cancelandoAceite = a.status == StatusCandidatura.aceita &&
+        status == StatusCandidatura.recusada;
+    final acao = status == StatusCandidatura.aceita
+        ? 'aceitar'
+        : cancelandoAceite
+            ? 'cancelar a aceitação de'
+            : 'recusar';
+    final confirmacao = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: Text(
+          cancelandoAceite
+              ? 'Cancelar aceitação?'
+              : 'Confirmar ${status == StatusCandidatura.aceita ? 'aceitação' : 'recusa'}?',
+        ),
+        content: Text(
+          cancelandoAceite
+              ? 'Deseja cancelar a aceitação de ${a.operarioNome} no serviço "${a.servicoTitulo}"?'
+              : 'Deseja $acao a candidatura de ${a.operarioNome} para o serviço "${a.servicoTitulo}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, false),
+            child: const Text('Voltar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(contexto, true),
+            child: Text(
+              cancelandoAceite
+                  ? 'Cancelar aceitação'
+                  : status == StatusCandidatura.aceita
+                      ? 'Aceitar'
+                      : 'Recusar',
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmacao != true || !mounted) return;
+
     final sucesso = await CandidaturaDeServico.atualizarStatusAWS(
       candidatura: a,
       novoStatus: status,
     );
 
     if (sucesso) {
-      setState(() => a.status = status);
       if (mounted) {
+        setState(() => a.status = status);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              status == StatusCandidatura.aceita
-                  ? '${a.operarioNome} foi aceito para o serviço.'
-                  : 'Candidatura de ${a.operarioNome} recusada.',
+              cancelandoAceite
+                  ? 'Aceitação de ${a.operarioNome} cancelada.'
+                  : status == StatusCandidatura.aceita
+                      ? '${a.operarioNome} foi aceito para o serviço.'
+                      : 'Candidatura de ${a.operarioNome} recusada.',
             ),
           ),
         );
@@ -62,7 +107,8 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao registrar decisão. Tente novamente.')),
+          const SnackBar(
+              content: Text('Erro ao registrar decisão. Tente novamente.')),
         );
       }
     }
@@ -70,8 +116,12 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
 
   @override
   Widget build(BuildContext context) {
-    final pendentes = _applications.where((a) => a.status == StatusCandidatura.pendente).toList();
-    final decididas = _applications.where((a) => a.status != StatusCandidatura.pendente).toList();
+    final pendentes = _applications
+        .where((a) => a.status == StatusCandidatura.pendente)
+        .toList();
+    final decididas = _applications
+        .where((a) => a.status != StatusCandidatura.pendente)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -93,7 +143,9 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
                           child: const Center(
                             child: Text(
                               'Nenhuma candidatura recebida ainda.',
-                              style: TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
+                              style: TextStyle(
+                                  color: CoresApp.textoSecundario,
+                                  fontSize: 13),
                             ),
                           ),
                         ),
@@ -105,15 +157,18 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
                         if (pendentes.isNotEmpty) ...[
                           Text(
                             'Pendentes (${pendentes.length})',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 10),
                           ...pendentes.map((a) => Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: CardCandidaturaDeOperario(
                                   candidatura: a,
-                                  onAceitar: () => _decidir(a, StatusCandidatura.aceita),
-                                  onRecusar: () => _decidir(a, StatusCandidatura.recusada),
+                                  onAceitar: () =>
+                                      _decidir(a, StatusCandidatura.aceita),
+                                  onRecusar: () =>
+                                      _decidir(a, StatusCandidatura.recusada),
                                 ),
                               )),
                         ],
@@ -121,32 +176,38 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
                           const SizedBox(height: 12),
                           const Text(
                             'Já decididas',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 10),
                           ...decididas.map((a) => Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: CardCandidaturaDeOperario(
-                                  candidatura: a,
-                                  onAceitar: () => _decidir(a, StatusCandidatura.aceita),
-                                  onRecusar: () => _decidir(a, StatusCandidatura.recusada),
-                                  onCancelar: () => _decidir(a, StatusCandidatura.recusada),
-                                  onIniciarServico: () {
-                                    ModalControleChamado.exibir(
-                                      context,
-                                      candidatura: a,
-                                      horasEstimadas: 4.0, // Horas da ordem de serviço
-                                      onEncerrar: (horasTrabalhadas, pontosGanhos) async {
-                                        // Atualiza os pontos na AWS / Banco
-                                        await CandidaturaDeServico.atualizarStatusAWS(
-                                          candidatura: a,
-                                          novoStatus: StatusCandidatura.aceita,
-                                        );
-                                      },
-                                    );
-                                  },
-                                )
-                              )),
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: CardCandidaturaDeOperario(
+                                candidatura: a,
+                                onAceitar: () =>
+                                    _decidir(a, StatusCandidatura.aceita),
+                                onRecusar: () =>
+                                    _decidir(a, StatusCandidatura.recusada),
+                                onCancelar: () =>
+                                    _decidir(a, StatusCandidatura.recusada),
+                                onIniciarServico: () {
+                                  ModalControleChamado.exibir(
+                                    context,
+                                    candidatura: a,
+                                    horasEstimadas:
+                                        4.0, // Horas da ordem de serviço
+                                    onEncerrar:
+                                        (horasTrabalhadas, pontosGanhos) async {
+                                      // Atualiza os pontos na AWS / Banco
+                                      await CandidaturaDeServico
+                                          .atualizarStatusAWS(
+                                        candidatura: a,
+                                        novoStatus: StatusCandidatura.aceita,
+                                      );
+                                    },
+                                  );
+                                },
+                              ))),
                         ],
                       ],
                     ),

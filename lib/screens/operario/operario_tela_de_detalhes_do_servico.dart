@@ -21,7 +21,29 @@ class _OperarioTelaDeDetalhesDoServicoState
   bool _candidatado = false;
   bool _enviando = false;
 
-  Future<void> _candidatar(BuildContext context) async {
+  Future<void> _candidatar() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: const Text('Confirmar candidatura'),
+        content: Text(
+          'Deseja enviar sua candidatura para o serviço "${widget.servico.titulo}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(contexto, true),
+            child: const Text('Enviar candidatura'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true || !mounted) return;
+
     setState(() => _enviando = true);
 
     final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
@@ -37,6 +59,7 @@ class _OperarioTelaDeDetalhesDoServicoState
       nivelExperiencia: operario.nivelExperiencia,
     );
 
+    if (!mounted) return;
     setState(() => _enviando = false);
 
     if (sucesso) {
@@ -155,7 +178,7 @@ class _OperarioTelaDeDetalhesDoServicoState
               child: ElevatedButton(
                 onPressed: (_candidatado || _enviando)
                     ? null
-                    : () => _candidatar(context),
+                    : _candidatar,
                 style: ElevatedButton.styleFrom(
                   disabledBackgroundColor: CoresApp.verdeSucesso,
                   disabledForegroundColor: CoresApp.branco,

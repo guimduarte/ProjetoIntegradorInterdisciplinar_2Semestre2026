@@ -91,6 +91,7 @@ class _InstituicaoLoginFormState extends State<_InstituicaoLoginForm> {
     final resultado = await _servicoAuth.fazerLogin(
       email: _emailController.text,
       senha: _senhaController.text,
+      tipoEsperado: 'instituicao',
     );
 
     if (!mounted) return;
