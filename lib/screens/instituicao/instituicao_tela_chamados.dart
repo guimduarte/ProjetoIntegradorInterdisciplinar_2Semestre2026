@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:maos_solidarias/screens/instituicao/modal_controle_chamado.dart';
 import '../../models/candidatura_de_servico.dart';
+import '../../models/ordem_servico.dart';
 import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/card_candidatura_de_operario.dart';
+import 'modal_controle_chamado.dart';
 
-/// Central de chamados da instituição (ÉPICO 03 - US03.2): lista as
-/// candidaturas recebidas com a visualização restrita do perfil do
-/// operário e as ações de aceitar/recusar.
 class InstituicaoTelaChamados extends StatefulWidget {
   const InstituicaoTelaChamados({super.key});
 
@@ -62,7 +60,7 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao registrar decisão. Tente novamente.')),
+          const SnackBar(content: Text('Erro ao registrar decisão na AWS.')),
         );
       }
     }
@@ -71,7 +69,8 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
   @override
   Widget build(BuildContext context) {
     final pendentes = _applications.where((a) => a.status == StatusCandidatura.pendente).toList();
-    final decididas = _applications.where((a) => a.status != StatusCandidatura.pendente).toList();
+    final aceitas = _applications.where((a) => a.status == StatusCandidatura.aceita).toList();
+    final recusadas = _applications.where((a) => a.status == StatusCandidatura.recusada).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -117,35 +116,52 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
                                 ),
                               )),
                         ],
-                        if (decididas.isNotEmpty) ...[
+                        if (aceitas.isNotEmpty) ...[
                           const SizedBox(height: 12),
-                          const Text(
-                            'Já decididas',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                          Text(
+                            'Em Andamento / Aceitas (${aceitas.length})',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 10),
-                          ...decididas.map((a) => Padding(
+                          ...aceitas.map((a) => Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: CardCandidaturaDeOperario(
                                   candidatura: a,
-                                  onAceitar: () => _decidir(a, StatusCandidatura.aceita),
-                                  onRecusar: () => _decidir(a, StatusCandidatura.recusada),
+                                  onAceitar: () {},
+                                  onRecusar: () {},
                                   onCancelar: () => _decidir(a, StatusCandidatura.recusada),
                                   onIniciarServico: () {
                                     ModalControleChamado.exibir(
                                       context,
                                       candidatura: a,
-                                      horasEstimadas: 4.0, // Horas da ordem de serviço
-                                      onEncerrar: (horasTrabalhadas, pontosGanhos) async {
-                                        // Atualiza os pontos na AWS / Banco
-                                        await CandidaturaDeServico.atualizarStatusAWS(
-                                          candidatura: a,
-                                          novoStatus: StatusCandidatura.aceita,
+                                      horasEstimadas: 4.0,
+                                      onEncerrar: (horas, pontos) async {
+                                        // Atualiza o status do serviço na AWS automaticamente para 'Concluído'
+                                        await OrdemServico.atualizarStatusServicoAWS(
+                                          servicoId: a.servicoId,
+                                          novoStatus: StatusServico.concluido,
                                         );
+                                        _carregarCandidaturas();
                                       },
                                     );
                                   },
-                                )
+                                ),
+                              )),
+                        ],
+                        if (recusadas.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Recusadas (${recusadas.length})',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 10),
+                          ...recusadas.map((a) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: CardCandidaturaDeOperario(
+                                  candidatura: a,
+                                  onAceitar: () {},
+                                  onRecusar: () {},
+                                ),
                               )),
                         ],
                       ],

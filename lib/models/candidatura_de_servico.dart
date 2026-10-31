@@ -7,6 +7,7 @@ import 'amplify/ModelProvider.dart';
 import 'amplify/Application.dart';
 
 import 'nivel_experiencia.dart';
+import 'ordem_servico.dart';
 import '../theme/tema_do_app.dart';
 
 enum StatusCandidatura { pendente, aceita, recusada }
@@ -165,7 +166,17 @@ class CandidaturaDeServico {
       final request = ModelMutations.update(atualizado);
       final response = await Amplify.API.mutate(request: request).response;
 
-      return response.data != null;
+      if (response.data != null) {
+        // Se a candidatura foi aceita, atualiza automaticamente o status do Serviço para 'Aceito'
+        if (novoStatus == StatusCandidatura.aceita) {
+          await OrdemServico.atualizarStatusServicoAWS(
+            servicoId: candidatura.servicoId,
+            novoStatus: StatusServico.aceito,
+          );
+        }
+        return true;
+      }
+      return false;
     } on ApiException catch (e) {
       debugPrint('Erro ao atualizar status da candidatura na AWS: ${e.message}');
       return false;

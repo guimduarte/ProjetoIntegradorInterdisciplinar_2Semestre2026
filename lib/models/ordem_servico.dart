@@ -302,9 +302,30 @@ class OrdemServico {
       return [];
     }
   }
-}
+  static Future<bool> atualizarStatusServicoAWS({
+    required String servicoId,
+    required StatusServico novoStatus,
+  }) async {
+    try {
+      final request = ModelQueries.get(
+        Service.classType,
+        ServiceModelIdentifier(id: servicoId),
+      );
+      final response = await Amplify.API.query(request: request).response;
+      final servicoAWS = response.data;
 
-/// Mocks mantidos para retrocompatibilidade em testes offline
-//final List<OrdemServico> mockOrdensServico = [...];
-//final List<OrdemServico> mockServicosRealizados = [...];
-//final List<OrdemServico> mockServicosAceitos = [...];
+      if (servicoAWS != null) {
+        final atualizado = servicoAWS.copyWith(
+          status_servico: novoStatus.texto,
+        );
+        final updateReq = ModelMutations.update(atualizado);
+        final updateRes = await Amplify.API.mutate(request: updateReq).response;
+        return updateRes.data != null;
+      }
+      return false;
+    } on ApiException catch (e) {
+      debugPrint('Erro ao atualizar status do serviço na AWS: ${e.message}');
+      return false;
+    }
+  }
+}

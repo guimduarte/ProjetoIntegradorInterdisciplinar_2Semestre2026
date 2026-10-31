@@ -1,4 +1,3 @@
-// Imports necessários para comunicar com a AWS
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_api/amplify_api.dart';
 
@@ -15,9 +14,8 @@ import '../../widgets/card_servicos.dart';
 import '../shared/tela_notificacoes.dart';
 import 'instituicao_tela_novo_servico.dart';
 
-/// Tela inicial da instituição (ÉPICO 02 - US02.2): botão de ação
-/// flutuante para criar um 'Novo Serviço' e visão geral dos serviços
-/// publicados.
+/// Tela inicial da instituição: botão de ação flutuante para criar um 'Novo Serviço'
+/// e visão geral dos serviços publicados.
 class InstituicaoTelaHome extends StatefulWidget {
   const InstituicaoTelaHome({super.key});
 
@@ -115,46 +113,6 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
     }
   }
 
-  // --- UPDATE: Atualiza o status do serviço na AWS ---
-  Future<void> _atualizarStatusServico(
-      OrdemServico servicoVisual, StatusServico novoStatus) async {
-    if (servicoVisual.awsService == null) return;
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Atualizando status...')),
-      );
-    }
-
-    try {
-      final awsAtualizado = servicoVisual.awsService!.copyWith(
-        status_servico: novoStatus.texto,
-      );
-
-      final request = ModelMutations.update(awsAtualizado);
-      final response = await Amplify.API.mutate(request: request).response;
-
-      if (response.data != null) {
-        _buscarServicosAWS();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Status alterado para "${novoStatus.texto}"!'),
-            ),
-          );
-        }
-      }
-    } on ApiException catch (e) {
-      debugPrint('Erro ao atualizar status na AWS: ${e.message}');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar: ${e.message}')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -196,8 +154,6 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: CardServicos(
                                   servico: s,
-                                  onAlterarStatus: (novoStatus) =>
-                                      _atualizarStatusServico(s, novoStatus),
                                   onDeletar: () => _deletarServico(s),
                                 ),
                               ))
