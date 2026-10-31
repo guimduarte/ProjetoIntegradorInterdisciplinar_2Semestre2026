@@ -1,3 +1,4 @@
+// Imports necessários para comunicar com a AWS
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_api/amplify_api.dart';
 
@@ -14,8 +15,8 @@ import '../../widgets/card_servicos.dart';
 import '../shared/tela_notificacoes.dart';
 import 'instituicao_tela_novo_servico.dart';
 
-/// Tela inicial da instituição: botão de ação flutuante para criar um 'Novo Serviço'
-/// e visão geral dos serviços publicados.
+/// Tela inicial da instituição: botão de ação flutuante para criar um 'Novo Serviço',
+/// visão geral dos serviços publicados ativos e seção de serviços concluídos.
 class InstituicaoTelaHome extends StatefulWidget {
   const InstituicaoTelaHome({super.key});
 
@@ -115,6 +116,14 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
 
   @override
   Widget build(BuildContext context) {
+    final servicosEmAndamento = _servicosPublicados
+        .where((s) => s.status != StatusServico.concluido)
+        .toList();
+
+    final servicosConcluidos = _servicosPublicados
+        .where((s) => s.status == StatusServico.concluido)
+        .toList();
+
     return ListenableBuilder(
       listenable: GerenciadorSessaoUsuario.instancia,
       builder: (context, _) {
@@ -128,6 +137,8 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
               children: [
                 _buildHeader(context, instituicao),
                 _buildStats(instituicao),
+
+                // Seção 1: Serviços Ativos / Publicados
                 const Padding(
                   padding: EdgeInsets.fromLTRB(16, 20, 16, 8),
                   child: TituloSecao(titulo: 'Seus serviços publicados'),
@@ -140,26 +151,60 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
                           color: CoresApp.vermelhoAcao),
                     ),
                   )
-                else if (_servicosPublicados.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Nenhum serviço publicado ainda.'),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: _servicosPublicados
-                          .map((s) => Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: CardServicos(
-                                  servico: s,
-                                  onDeletar: () => _deletarServico(s),
-                                ),
-                              ))
-                          .toList(),
+                else ...[
+                  if (servicosEmAndamento.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Text(
+                        'Nenhum serviço em aberto no momento.',
+                        style: TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: servicosEmAndamento
+                            .map((s) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: CardServicos(
+                                    servico: s,
+                                    onDeletar: () => _deletarServico(s),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
                     ),
+
+                  // Seção 2: Serviços Concluídos
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 20, 16, 8),
+                    child: TituloSecao(titulo: 'Serviços Concluídos'),
                   ),
+                  if (servicosConcluidos.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Text(
+                        'Nenhum serviço concluído ainda.',
+                        style: TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: servicosConcluidos
+                            .map((s) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: CardServicos(
+                                    servico: s,
+                                    onDeletar: () => _deletarServico(s),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                ],
               ],
             ),
           ),

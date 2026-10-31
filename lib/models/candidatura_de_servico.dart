@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_api/amplify_api.dart';
 
-// Imports dos modelos gerados pelo Amplify em 'lib/models/amplify/'
 import 'amplify/ModelProvider.dart';
 import 'amplify/Application.dart';
+import 'amplify/Service.dart';
 
 import 'nivel_experiencia.dart';
 import 'ordem_servico.dart';
@@ -36,7 +36,6 @@ extension StatusCandidaturaX on StatusCandidatura {
   }
 }
 
-/// Representa a candidatura de um operário a um serviço (ÉPICO 03 - US03.2).
 class CandidaturaDeServico {
   final String id;
   final String servicoId;
@@ -50,7 +49,6 @@ class CandidaturaDeServico {
   StatusCandidatura status;
   final DateTime dataCriacao;
 
-  // Guarda a referência original do objeto gerado pelo Amplify para efetuar updates
   final Application? awsApplication;
 
   CandidaturaDeServico({
@@ -68,7 +66,6 @@ class CandidaturaDeServico {
     this.awsApplication,
   });
 
-  /// Converte o objeto Application da AWS para a classe de modelo utilizada na UI
   factory CandidaturaDeServico.fromAWS(Application aws) {
     final statusConvertido = StatusCandidatura.values.firstWhere(
       (s) => s.texto == aws.status_candidatura,
@@ -87,7 +84,7 @@ class CandidaturaDeServico {
     return CandidaturaDeServico(
       id: aws.id,
       servicoId: aws.service_id,
-      servicoTitulo: 'Serviço Solidário', // Título exibido no card
+      servicoTitulo: 'Serviço Solidário',
       operarioId: aws.operario_id,
       operarioNome: aws.resumo_operario_nome ?? 'Operário Voluntário',
       escopoPrincipal: escopoTexto,
@@ -102,7 +99,6 @@ class CandidaturaDeServico {
     );
   }
 
-  // --- CREATE: Salva a candidatura no DynamoDB via GraphQL ---
   static Future<bool> criarCandidaturaAWS({
     required String servicoId,
     required String servicoTitulo,
@@ -134,24 +130,39 @@ class CandidaturaDeServico {
     }
   }
 
-  // --- READ: Busca todas as candidaturas no DynamoDB ---
+  // --- READ: Busca candidaturas e remove as de serviços já concluídos ---
   static Future<List<CandidaturaDeServico>> buscarCandidaturasAWS({
     String? instituicaoId,
     String? operarioId,
   }) async {
     try {
-      final request = ModelQueries.list(Application.classType);
-      final response = await Amplify.API.query(request: request).response;
-      final itensNuvem = response.data?.items.whereType<Application>().toList() ?? [];
+      // 1. Busca todas as candidaturas
+      final requestApp = ModelQueries.list(Application.classType);
+      final responseApp = await Amplify.API.query(request: requestApp).response;
+      final itensApp = responseApp.data?.items.whereType<Application>().toList() ?? [];
 
-      return itensNuvem.map((aws) => CandidaturaDeServico.fromAWS(aws)).toList();
+      // 2. Busca a lista de serviços para verificar quais já foram concluídos
+      final requestServ = ModelQueries.list(Service.classType);
+      final responseServ = await Amplify.API.query(request: requestServ).response;
+      final itensServ = responseServ.data?.items.whereType<Service>().toList() ?? [];
+
+      final servicosConcluidosIds = itensServ
+          .where((s) => s.status_servico == StatusServico.concluido.texto)
+          .map((s) => s.id)
+          .toSet();
+
+      // 3. Oculta candidaturas associadas a serviços concluídos
+      final candidaturasAtivas = itensApp.where((aws) {
+        return !servicosConcluidosIds.contains(aws.service_id);
+      }).toList();
+
+      return candidaturasAtivas.map((aws) => CandidaturaDeServico.fromAWS(aws)).toList();
     } on ApiException catch (e) {
       debugPrint('Erro ao buscar candidaturas na AWS: ${e.message}');
       return [];
     }
   }
 
-  // --- UPDATE: Altera o status da candidatura na AWS (Aceita / Recusada) ---
   static Future<bool> atualizarStatusAWS({
     required CandidaturaDeServico candidatura,
     required StatusCandidatura novoStatus,
@@ -167,7 +178,6 @@ class CandidaturaDeServico {
       final response = await Amplify.API.mutate(request: request).response;
 
       if (response.data != null) {
-        // Se a candidatura foi aceita, atualiza automaticamente o status do Serviço para 'Aceito'
         if (novoStatus == StatusCandidatura.aceita) {
           await OrdemServico.atualizarStatusServicoAWS(
             servicoId: candidatura.servicoId,
