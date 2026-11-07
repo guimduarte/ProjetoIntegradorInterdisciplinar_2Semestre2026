@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/nivel_experiencia.dart';
 import '../models/candidatura_de_servico.dart';
+import '../screens/shared/tela_visualizacao_perfil_operario.dart';
 import '../theme/tema_do_app.dart';
 
 class CardCandidaturaDeOperario extends StatelessWidget {
@@ -18,6 +19,16 @@ class CardCandidaturaDeOperario extends StatelessWidget {
     this.onIniciarServico,
     this.onCancelar,
   });
+
+  void _abrirPerfilOperario(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TelaVisualizacaoPerfilOperario(
+          emailOperario: candidatura.operarioEmail,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,58 +50,81 @@ class CardCandidaturaDeOperario extends StatelessWidget {
             style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario),
           ),
           const SizedBox(height: 6),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: CoresApp.azulFundo,
-                child: Text(
-                  candidatura.operarioNome.isNotEmpty
-                      ? candidatura.operarioNome.substring(0, 1)
-                      : 'O',
-                  style: const TextStyle(
-                    color: CoresApp.azulClaro,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      candidatura.operarioNome,
+          InkWell(
+            onTap: () => _abrirPerfilOperario(context),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: CoresApp.azulFundo,
+                    child: Text(
+                      candidatura.operarioNome.isNotEmpty
+                          ? candidatura.operarioNome.substring(0, 1)
+                          : 'O',
                       style: const TextStyle(
-                        fontSize: 13,
+                        color: CoresApp.azulClaro,
                         fontWeight: FontWeight.w700,
-                        color: CoresApp.textoPrimario,
                       ),
                     ),
-                    Text(
-                      candidatura.escopoPrincipal,
-                      style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              candidatura.operarioNome,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: CoresApp.azulConfianca,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 10,
+                              color: CoresApp.azulConfianca,
+                            ),
+                          ],
+                        ),
+                        Text(
+                          candidatura.escopoPrincipal,
+                          style: const TextStyle(
+                              fontSize: 11, color: CoresApp.textoSecundario),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  if (!pendente)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: aceito
+                            ? CoresApp.verdeFundo
+                            : CoresApp.vermelhoFundo,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        aceito ? 'Aceita' : 'Recusada',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: aceito
+                              ? CoresApp.verdeEscuro
+                              : CoresApp.vermelhoEscuro,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              if (!pendente)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: aceito ? CoresApp.verdeFundo : CoresApp.vermelhoFundo,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    aceito ? 'Aceita' : 'Recusada',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: aceito ? CoresApp.verdeEscuro : CoresApp.vermelhoEscuro,
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
           const SizedBox(height: 10),
           _linha(Icons.mail_outline_rounded, candidatura.operarioEmail),

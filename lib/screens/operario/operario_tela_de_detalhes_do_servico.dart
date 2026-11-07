@@ -3,6 +3,7 @@ import '../../models/candidatura_de_servico.dart';
 import '../../models/nivel_experiencia.dart';
 import '../../models/ordem_servico.dart';
 import '../../services/gerenciador_sessao_usuario.dart';
+import '../shared/tela_visualizacao_perfil_instituicao.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/selo_de_complexidade.dart';
 
@@ -20,6 +21,16 @@ class _OperarioTelaDeDetalhesDoServicoState
     extends State<OperarioTelaDeDetalhesDoServico> {
   bool _candidatado = false;
   bool _enviando = false;
+
+  void _abrirPerfilInstituicao(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TelaVisualizacaoPerfilInstituicao(
+          nomeOuEmailInstituicao: widget.servico.instituicaoNome,
+        ),
+      ),
+    );
+  }
 
   Future<void> _candidatar() async {
     final confirmar = await showDialog<bool>(
@@ -48,10 +59,13 @@ class _OperarioTelaDeDetalhesDoServicoState
 
     final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
 
+    final identificadorOperario =
+        operario.email.isNotEmpty ? operario.email : operario.nome;
+
     final sucesso = await CandidaturaDeServico.criarCandidaturaAWS(
       servicoId: widget.servico.id,
       servicoTitulo: widget.servico.titulo,
-      operarioId: operario.nome, // ou ID do usuario Cognito
+      operarioId: identificadorOperario,
       operarioNome: operario.nome,
       operarioEmail: operario.email,
       operarioTelefone: operario.telefone,
@@ -113,12 +127,37 @@ class _OperarioTelaDeDetalhesDoServicoState
                 color: CoresApp.textoPrimario,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              s.instituicaoNome,
-              style: const TextStyle(
-                fontSize: 13,
-                color: CoresApp.textoSecundario,
+            const SizedBox(height: 6),
+            InkWell(
+              onTap: () => _abrirPerfilInstituicao(context),
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.business_rounded,
+                      size: 16,
+                      color: CoresApp.azulConfianca,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      s.instituicaoNome,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: CoresApp.azulConfianca,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 10,
+                      color: CoresApp.azulConfianca,
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 12),

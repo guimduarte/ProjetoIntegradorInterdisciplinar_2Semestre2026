@@ -329,6 +329,64 @@ class ServicoAutenticacao {
     }
   }
 
+  /// Executa uma mutação ou consulta GraphQL testando os modos de autorização suportados pela AWS (`userPools` e `iam`).
+  Future<GraphQLResponse<String>?> _executarRequisicaoGraphQL({
+    required String documento,
+    required Map<String, dynamic> variaveis,
+    required bool ehMutacao,
+  }) async {
+    GraphQLResponse<String>? resposta;
+
+    // 1. Tenta via Cognito User Pools (AMAZON_COGNITO_USER_POOLS - Usuário Autenticado)
+    try {
+      final reqUserPools = GraphQLRequest<String>(
+        document: documento,
+        variables: variaveis,
+        authorizationMode: APIAuthorizationType.userPools,
+      );
+      final resp = ehMutacao
+          ? await Amplify.API.mutate(request: reqUserPools).response.timeout(const Duration(seconds: 12))
+          : await Amplify.API.query(request: reqUserPools).response.timeout(const Duration(seconds: 10));
+      resposta = resp;
+      if (!resp.hasErrors) return resposta;
+    } catch (e) {
+      safePrint('Aviso: Requisição GraphQL via UserPools falhou: $e');
+    }
+
+    // 2. Tenta via AWS IAM (Identity Pool SigV4)
+    try {
+      final reqIam = GraphQLRequest<String>(
+        document: documento,
+        variables: variaveis,
+        authorizationMode: APIAuthorizationType.iam,
+      );
+      final resp = ehMutacao
+          ? await Amplify.API.mutate(request: reqIam).response.timeout(const Duration(seconds: 12))
+          : await Amplify.API.query(request: reqIam).response.timeout(const Duration(seconds: 10));
+      resposta = resp;
+      if (!resp.hasErrors) return resposta;
+    } catch (e) {
+      safePrint('Aviso: Requisição GraphQL via IAM falhou: $e');
+    }
+
+    // 3. Tenta modo padrão do Amplify
+    try {
+      final req = GraphQLRequest<String>(
+        document: documento,
+        variables: variaveis,
+      );
+      final resp = ehMutacao
+          ? await Amplify.API.mutate(request: req).response.timeout(const Duration(seconds: 12))
+          : await Amplify.API.query(request: req).response.timeout(const Duration(seconds: 10));
+      resposta = resp;
+      if (!resp.hasErrors) return resposta;
+    } catch (e) {
+      safePrint('Aviso: Requisição GraphQL no modo padrão falhou: $e');
+    }
+
+    return resposta;
+  }
+
   /// Envia um arquivo de Estatuto Social (PDF, Word, Imagem) para a pasta `estatutos/*` do Amazon S3 Storage.
   Future<String?> enviarEstatutoSocialParaS3({
     required String nomeOriginalArquivo,
@@ -597,8 +655,8 @@ class ServicoAutenticacao {
     }
   }
 
-  /// Busca os dados do usuário na tabela `User` filtrando pelo e-mail.
-  Future<Map<String, dynamic>?> obterPerfilUsuarioPorEmail(String email) async {
+  /// Busca os dados do usuário na tabela `User` filtrando pelo e-mail, nome ou ID.
+  Future<Map<String, dynamic>?> obterPerfilUsuarioPorEmail(String termoBusca) async {
     try {
       const consultaListarUsuariosGraphQL = '''
         query BuscarUsuarioPorEmail(\$filter: ModelUserFilterInput) {
@@ -627,33 +685,131 @@ class ServicoAutenticacao {
         }
       ''';
 
-      final requisicaoGraphQL = GraphQLRequest<String>(
-        document: consultaListarUsuariosGraphQL,
-        variables: {
+      // 1. Tenta por e-mail
+      var resposta = await _executarRequisicaoGraphQL(
+        documento: consultaListarUsuariosGraphQL,
+        variaveis: {
           'filter': {
-            'email': {'eq': email.trim()}
+            'email': {'eq': termoBusca.trim()}
           }
         },
+        ehMutacao: false,
       );
 
-      final resposta = await Amplify.API
-          .query(request: requisicaoGraphQL)
-          .response
-          .timeout(const Duration(seconds: 10));
-
-      if (resposta.hasErrors || resposta.data == null) {
-        safePrint('Erros ao buscar usuário por e-mail: ${resposta.errors}');
-        return null;
+      if (resposta != null && !resposta.hasErrors && resposta.data != null) {
+        final mapaDadosJson = jsonDecode(resposta.data!) as Map<String, dynamic>;
+        final itens = mapaDadosJson['listUsers']?['items'] as List<dynamic>?;
+        if (itens != null && itens.isNotEmpty) {
+          return itens.first as Map<String, dynamic>;
+        }
       }
 
-      final mapaDadosJson = jsonDecode(resposta.data!) as Map<String, dynamic>;
-      final itens = mapaDadosJson['listUsers']?['items'] as List<dynamic>?;
+      // 2. Tenta por nome
+      resposta = await _executarRequisicaoGraphQL(
+        documento: consultaListarUsuariosGraphQL,
+        variaveis: {
+          'filter': {
+            'nome': {'eq': termoBusca.trim()}
+          }
+        },
+        ehMutacao: false,
+      );
 
-      if (itens != null && itens.isNotEmpty) {
-        return itens.first as Map<String, dynamic>;
+      if (resposta != null && !resposta.hasErrors && resposta.data != null) {
+        final mapaDadosJson = jsonDecode(resposta.data!) as Map<String, dynamic>;
+        final itens = mapaDadosJson['listUsers']?['items'] as List<dynamic>?;
+        if (itens != null && itens.isNotEmpty) {
+          return itens.first as Map<String, dynamic>;
+        }
+      }
+
+      // 3. Tenta por id
+      resposta = await _executarRequisicaoGraphQL(
+        documento: consultaListarUsuariosGraphQL,
+        variaveis: {
+          'filter': {
+            'id': {'eq': termoBusca.trim()}
+          }
+        },
+        ehMutacao: false,
+      );
+
+      if (resposta != null && !resposta.hasErrors && resposta.data != null) {
+        final mapaDadosJson = jsonDecode(resposta.data!) as Map<String, dynamic>;
+        final itens = mapaDadosJson['listUsers']?['items'] as List<dynamic>?;
+        if (itens != null && itens.isNotEmpty) {
+          return itens.first as Map<String, dynamic>;
+        }
       }
     } catch (erro) {
-      safePrint('Erro ao obter perfil por e-mail: $erro');
+      safePrint('Erro ao obter perfil de usuário na AWS: $erro');
+    }
+    return null;
+  }
+
+  /// Busca os dados de uma instituição na tabela `User` filtrando pelo nome da instituição ou pelo e-mail.
+  Future<Map<String, dynamic>?> obterPerfilInstituicaoPorNome(String termoBusca) async {
+    try {
+      const consultaBuscarInstituicaoGraphQL = '''
+        query BuscarInstituicao(\$filter: ModelUserFilterInput) {
+          listUsers(filter: \$filter) {
+            items {
+              id
+              perfil
+              email
+              nome
+              nome_instituicao
+              cnpj
+              telefone
+              endereco_texto
+              tipo_entidade
+              estatuto_social_url
+              latitude
+              longitude
+            }
+          }
+        }
+      ''';
+
+      // 1. Tenta buscar filtrando por nome_instituicao
+      var resposta = await _executarRequisicaoGraphQL(
+        documento: consultaBuscarInstituicaoGraphQL,
+        variaveis: {
+          'filter': {
+            'nome_instituicao': {'eq': termoBusca.trim()}
+          }
+        },
+        ehMutacao: false,
+      );
+
+      if (resposta != null && !resposta.hasErrors && resposta.data != null) {
+        final mapaDadosJson = jsonDecode(resposta.data!) as Map<String, dynamic>;
+        final itens = mapaDadosJson['listUsers']?['items'] as List<dynamic>?;
+        if (itens != null && itens.isNotEmpty) {
+          return itens.first as Map<String, dynamic>;
+        }
+      }
+
+      // 2. Se não encontrou por nome_instituicao, tenta por e-mail
+      resposta = await _executarRequisicaoGraphQL(
+        documento: consultaBuscarInstituicaoGraphQL,
+        variaveis: {
+          'filter': {
+            'email': {'eq': termoBusca.trim()}
+          }
+        },
+        ehMutacao: false,
+      );
+
+      if (resposta != null && !resposta.hasErrors && resposta.data != null) {
+        final mapaDadosJson = jsonDecode(resposta.data!) as Map<String, dynamic>;
+        final itens = mapaDadosJson['listUsers']?['items'] as List<dynamic>?;
+        if (itens != null && itens.isNotEmpty) {
+          return itens.first as Map<String, dynamic>;
+        }
+      }
+    } catch (erro) {
+      safePrint('Erro ao obter perfil de instituição por nome/e-mail: $erro');
     }
     return null;
   }

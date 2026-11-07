@@ -90,7 +90,9 @@ class CandidaturaDeServico {
       operarioId: aws.operario_id,
       operarioNome: aws.resumo_operario_nome ?? 'Operário Voluntário',
       escopoPrincipal: escopoTexto,
-      operarioEmail: 'Contato via plataforma',
+      operarioEmail: aws.operario_id.contains('@')
+          ? aws.operario_id
+          : (aws.resumo_operario_nome ?? 'Operário Voluntário'),
       operarioTelefone: 'Contato via plataforma',
       nivelExperiencia: nivelConvertido,
       status: statusConvertido,
