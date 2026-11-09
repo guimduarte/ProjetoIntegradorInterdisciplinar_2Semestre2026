@@ -76,6 +76,9 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
           return atendeEscopo && atendeBusca;
         }).toList();
 
+        //ordena por mais prox
+        servicosFiltrados.sort((a,b) => a.distanciaKm.compareTo(b.distanciaKm));
+
         return Scaffold(
           body: SafeArea(
             child: RefreshIndicator(
@@ -159,6 +162,8 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
     );
   }
 
+ //espaco
+
   Widget _buildHeader(BuildContext context, PerfilOperario operario) {
     final primeiroNome = operario.nome.trim().isNotEmpty
         ? operario.nome.trim().split(' ').first
@@ -180,6 +185,7 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              // ---> ANTES: Texto "Olá, Nome"
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -197,42 +203,55 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
                   ),
                 ],
               ),
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const TelaNotificacoes(ehInstituicao: false),
+            
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: _carregarServicos,
+                    icon: const Icon(Icons.refresh_rounded, color: CoresApp.branco),
+                    tooltip: 'Atualizar lista',
                   ),
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_none_rounded,
-                        color: CoresApp.branco),
-                    Positioned(
-                      right: -4,
-                      top: -4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: CoresApp.amareloSolidario,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '2',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: CoresApp.amareloEscuro,
-                          ),
-                        ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const TelaNotificacoes(ehInstituicao: false),
                       ),
                     ),
-                  ],
-                ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.notifications_none_rounded,
+                            color: CoresApp.branco),
+                        Positioned(
+                          right: -4,
+                          top: -4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: CoresApp.amareloSolidario,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '2',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: CoresApp.amareloEscuro,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+          
+          // ---> DEPOIS: A tua localização (CEP/Endereço) e a Barra de Busca
           const SizedBox(height: 6),
           Row(
             children: [

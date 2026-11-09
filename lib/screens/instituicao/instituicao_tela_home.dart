@@ -34,27 +34,49 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
     _buscarServicosAWS();
   }
 
-  // --- READ: Busca serviços no DynamoDB ---
+  // // --- READ: Busca serviços no DynamoDB ---
+  // Future<void> _buscarServicosAWS() async {
+  //   setState(() => _carregando = true);
+
+  //   try {
+  //     final request = ModelQueries.list(Service.classType);
+  //     final response = await Amplify.API.query(request: request).response;
+  //     final servicosAWSBrutos =
+  //         response.data?.items.whereType<Service>().toList() ?? [];
+
+  //     final servicosConvertidos =
+  //         servicosAWSBrutos.map<OrdemServico>((servicoAWS) {
+  //       return OrdemServico.fromAWS(servicoAWS);
+  //     }).toList();
+
+  //     setState(() {
+  //       _servicosPublicados = servicosConvertidos;
+  //       _carregando = false;
+  //     });
+  //   } on ApiException catch (e) {
+  //     debugPrint('Erro ao buscar serviços na AWS: ${e.message}');
+  //     setState(() => _carregando = false);
+  //   }
+  // }
+  //bloco para ser excluido, busca todos os servicos, vamos buscar por id agora
+
+  // --- READ: Busca apenas os serviços desta Instituição no DynamoDB ---
   Future<void> _buscarServicosAWS() async {
     setState(() => _carregando = true);
 
     try {
-      final request = ModelQueries.list(Service.classType);
-      final response = await Amplify.API.query(request: request).response;
-      final servicosAWSBrutos =
-          response.data?.items.whereType<Service>().toList() ?? [];
+      // 1. Pega a instituição logada no momento
+      final instituicao = GerenciadorSessaoUsuario.instancia.instituicaoAtual;
 
-      final servicosConvertidos =
-          servicosAWSBrutos.map<OrdemServico>((servicoAWS) {
-        return OrdemServico.fromAWS(servicoAWS);
-      }).toList();
+      // 2. Chama a nova função passando o ID para a AWS filtrar direto lá no banco
+      final servicosConvertidos = await OrdemServico.buscarServicosDaInstituicaoAWS(instituicao.id);
 
       setState(() {
         _servicosPublicados = servicosConvertidos;
         _carregando = false;
       });
-    } on ApiException catch (e) {
-      debugPrint('Erro ao buscar serviços na AWS: ${e.message}');
+    } catch (e) {
+      debugPrint('Erro ao buscar serviços na AWS: $e');
       setState(() => _carregando = false);
     }
   }

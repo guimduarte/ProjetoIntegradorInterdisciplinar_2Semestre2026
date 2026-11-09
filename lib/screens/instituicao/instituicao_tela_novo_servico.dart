@@ -219,6 +219,8 @@ class _InstituicaoTelaNovoServicoState
         status_servico: StatusServico.aberto.texto,
         instituicao_nome: instituicao.nome,
         // Você pode passar a latitude e longitude se já tiver
+        latitude: instituicao.latitude,
+        longitude: instituicao.longitude,
       );
 
       // 2. Envia a Mutação (Create) para a AWS

@@ -32,11 +32,13 @@ class TelaAvaliacoes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reviews = ehInstituicao ? _reviewsInstituicao : _reviewsOperario;
-    final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
-    final instituicao = GerenciadorSessaoUsuario.instancia.instituicaoAtual;
+    final nomeExibicao = ehInstituicao 
+        ? GerenciadorSessaoUsuario.instancia.instituicaoAtual.nome 
+        : GerenciadorSessaoUsuario.instancia.operarioAtual.nome;
 
-    final media = ehInstituicao ? 4.6 : operario.avaliacaoMedia;
-    final nomeExibicao = ehInstituicao ? instituicao.nome : operario.nome;
+    final media = ehInstituicao 
+        ? 4.6 
+        : GerenciadorSessaoUsuario.instancia.operarioAtual.avaliacaoMedia;
 
     return Scaffold(
       appBar: AppBar(
