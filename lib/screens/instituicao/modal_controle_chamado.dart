@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:maos_solidarias/models/candidatura_de_servico.dart';
 import 'package:maos_solidarias/models/nivel_experiencia.dart';
+import '../../models/candidatura_de_servico.dart';
 import '../../theme/tema_do_app.dart';
 
 class ModalControleChamado extends StatefulWidget {
   final CandidaturaDeServico candidatura;
-  final double horasEstimadas; // Ex: 4.0 horas
+  final double horasEstimadas;
   final Function(double horasTrabalhadas, double pontosGanhos) onEncerrar;
 
   const ModalControleChamado({
@@ -40,15 +40,22 @@ class ModalControleChamado extends StatefulWidget {
 class _ModalControleChamadoState extends State<ModalControleChamado> {
   late Stopwatch _stopwatch;
   late Timer _timer;
-  late DateTime _dataInicio;
+  bool _encerrado = false;
 
   @override
   void initState() {
     super.initState();
-    _dataInicio = DateTime.now();
     _stopwatch = Stopwatch()..start();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {});
+      if (_encerrado) return;
+
+      final limiteSegundos = (widget.horasEstimadas * 3600).toInt();
+      // Se o serviço atingiu o limite estipulado de horas, encerra automaticamente
+      if (_stopwatch.elapsed.inSeconds >= limiteSegundos) {
+        _finalizarServico(motivoLimite: true);
+      } else {
+        setState(() {});
+      }
     });
   }
 
@@ -67,36 +74,34 @@ class _ModalControleChamadoState extends State<ModalControleChamado> {
     return '$horas:$minutos:$segundos';
   }
 
-  void _finalizarServico() {
+  void _finalizarServico({bool motivoLimite = false}) {
+    if (_encerrado) return;
+    _encerrado = true;
+
     _stopwatch.stop();
     _timer.cancel();
 
     final duracao = _stopwatch.elapsed;
-    // Converte a duração para horas (para testes curtos, pode-se usar duracao.inMinutes / 60 ou simular horas)
-    final double horasTrabalhadas = duracao.inSeconds > 0
-        ? (duracao.inSeconds / 3600.0)
-        : 1.0; 
+    final double horasTrabalhadas =
+        duracao.inSeconds > 0 ? (duracao.inSeconds / 3600.0) : 1.0;
 
-    // Regra de Negócio: 2,5 pontos a cada 1 hora trabalhada
     final double pontosBase = (horasTrabalhadas.floor()) * 2.5;
-
-    // Regra de Bônus: Se encerrar 1 hora ou mais antes do prazo estimado (+5 pontos)
     final bool economizouUmaHora = (widget.horasEstimadas - horasTrabalhadas) >= 1.0;
     final double bonus = economizouUmaHora ? 5.0 : 0.0;
-
     final double totalPontos = pontosBase + bonus;
 
     widget.onEncerrar(horasTrabalhadas, totalPontos);
     Navigator.of(context).pop();
 
-    _exibirResumoDialog(horasTrabalhadas, pontosBase, bonus, totalPontos);
+    _exibirResumoDialog(horasTrabalhadas, pontosBase, bonus, totalPontos, motivoLimite);
   }
 
-  void _exibirResumoDialog(double horas, double base, double bonus, double total) {
+  void _exibirResumoDialog(
+      double horas, double base, double bonus, double total, bool motivoLimite) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Serviço Concluído! 🎉'),
+        title: Text(motivoLimite ? 'Limite de Tempo Atingido! ⏰' : 'Serviço Concluído! 🎉'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +113,10 @@ class _ModalControleChamadoState extends State<ModalControleChamado> {
               const SizedBox(height: 4),
               const Text(
                 'Bônus por conclusão antecipada (≥1h antes): +5.0 pts',
-                style: TextStyle(color: CoresApp.verdeEscuro, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: CoresApp.verdeEscuro,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
             const Divider(),
@@ -145,7 +153,11 @@ class _ModalControleChamadoState extends State<ModalControleChamado> {
               children: [
                 const Text(
                   'Serviço em Andamento',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: CoresApp.textoPrimario),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: CoresApp.textoPrimario,
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -155,20 +167,23 @@ class _ModalControleChamadoState extends State<ModalControleChamado> {
                   ),
                   child: const Text(
                     'EM EXECUÇÃO',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: CoresApp.verdeEscuro),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: CoresApp.verdeEscuro,
+                    ),
                   ),
                 ),
               ],
             ),
             const Divider(height: 20),
-            
-            // Dados do Serviço
-            Text(c.servicoTitulo, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-            Text('Prazo Estimado: ${widget.horasEstimadas.toStringAsFixed(0)} hora(s)',
-                style: const TextStyle(fontSize: 12, color: CoresApp.textoSecundario)),
+            Text(c.servicoTitulo,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+            Text(
+              'Prazo Estimado: ${widget.horasEstimadas.toStringAsFixed(0)} hora(s)',
+              style: const TextStyle(fontSize: 12, color: CoresApp.textoSecundario),
+            ),
             const SizedBox(height: 12),
-
-            // Dados do Operário
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -179,20 +194,23 @@ class _ModalControleChamadoState extends State<ModalControleChamado> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Operário: ${c.operarioNome}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  Text('E-mail: ${c.operarioEmail}', style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
-                  Text('Telefone: ${c.operarioTelefone}', style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
-                  Text('Nível: ${c.nivelExperiencia.texto}', style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
+                  Text('Operário: ${c.operarioNome}',
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  Text('E-mail: ${c.operarioEmail}',
+                      style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
+                  Text('Telefone: ${c.operarioTelefone}',
+                      style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
+                  Text('Nível: ${c.nivelExperiencia.texto}',
+                      style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario)),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-
-            // Painel do Cronômetro
             Center(
               child: Column(
                 children: [
-                  const Text('Tempo Decorrido', style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario)),
+                  const Text('Tempo Decorrido',
+                      style: TextStyle(fontSize: 12, color: CoresApp.textoSecundario)),
                   const SizedBox(height: 4),
                   Text(
                     _formatarTempo(_stopwatch.elapsed),
@@ -207,12 +225,10 @@ class _ModalControleChamadoState extends State<ModalControleChamado> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Botão Encerrar Serviço
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _finalizarServico,
+                onPressed: () => _finalizarServico(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: CoresApp.vermelhoAcao,
                   padding: const EdgeInsets.symmetric(vertical: 14),

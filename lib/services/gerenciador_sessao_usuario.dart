@@ -16,11 +16,17 @@ class GerenciadorSessaoUsuario extends ChangeNotifier {
   PerfilInstituicao? get instituicaoLogada => _instituicaoLogada;
 
   /// Retorna o perfil do operário logado ou o objeto padrão caso não haja perfil carregado.
-  PerfilOperario get operarioAtual => _operarioLogado ?? mockOperarioAtual;
+  // PerfilOperario get operarioAtual => _operarioLogado ?? mockOperarioAtual;
+
+  //add gui -- perfil logado, sem mais mock
+  PerfilOperario get operarioAtual => _operarioLogado!;
 
   /// Retorna o perfil da instituição logada ou o objeto padrão caso não haja perfil carregado.
-  PerfilInstituicao get instituicaoAtual =>
-      _instituicaoLogada ?? mockInstituicaoAtual;
+  // PerfilInstituicao get instituicaoAtual =>
+  //     _instituicaoLogada ?? mockInstituicaoAtual;
+
+  //add gui --sem mais mock instituicao
+  PerfilInstituicao get instituicaoAtual => _instituicaoLogada!;
 
   bool get temOperarioLogado => _operarioLogado != null;
   bool get temInstituicaoLogada => _instituicaoLogada != null;

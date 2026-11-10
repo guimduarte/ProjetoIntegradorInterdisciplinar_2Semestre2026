@@ -15,9 +15,8 @@ import '../../widgets/card_servicos.dart';
 import '../shared/tela_notificacoes.dart';
 import 'instituicao_tela_novo_servico.dart';
 
-/// Tela inicial da instituição (ÉPICO 02 - US02.2): botão de ação
-/// flutuante para criar um 'Novo Serviço' e visão geral dos serviços
-/// publicados.
+/// Tela inicial da instituição: botão de ação flutuante para criar um 'Novo Serviço',
+/// visão geral dos serviços publicados ativos e seção de serviços concluídos.
 class InstituicaoTelaHome extends StatefulWidget {
   const InstituicaoTelaHome({super.key});
 
@@ -35,27 +34,49 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
     _buscarServicosAWS();
   }
 
-  // --- READ: Busca serviços no DynamoDB ---
+  // // --- READ: Busca serviços no DynamoDB ---
+  // Future<void> _buscarServicosAWS() async {
+  //   setState(() => _carregando = true);
+
+  //   try {
+  //     final request = ModelQueries.list(Service.classType);
+  //     final response = await Amplify.API.query(request: request).response;
+  //     final servicosAWSBrutos =
+  //         response.data?.items.whereType<Service>().toList() ?? [];
+
+  //     final servicosConvertidos =
+  //         servicosAWSBrutos.map<OrdemServico>((servicoAWS) {
+  //       return OrdemServico.fromAWS(servicoAWS);
+  //     }).toList();
+
+  //     setState(() {
+  //       _servicosPublicados = servicosConvertidos;
+  //       _carregando = false;
+  //     });
+  //   } on ApiException catch (e) {
+  //     debugPrint('Erro ao buscar serviços na AWS: ${e.message}');
+  //     setState(() => _carregando = false);
+  //   }
+  // }
+  //bloco para ser excluido, busca todos os servicos, vamos buscar por id agora
+
+  // --- READ: Busca apenas os serviços desta Instituição no DynamoDB ---
   Future<void> _buscarServicosAWS() async {
     setState(() => _carregando = true);
 
     try {
-      final request = ModelQueries.list(Service.classType);
-      final response = await Amplify.API.query(request: request).response;
-      final servicosAWSBrutos =
-          response.data?.items.whereType<Service>().toList() ?? [];
+      // 1. Pega a instituição logada no momento
+      final instituicao = GerenciadorSessaoUsuario.instancia.instituicaoAtual;
 
-      final servicosConvertidos =
-          servicosAWSBrutos.map<OrdemServico>((servicoAWS) {
-        return OrdemServico.fromAWS(servicoAWS);
-      }).toList();
+      // 2. Chama a nova função passando o ID para a AWS filtrar direto lá no banco
+      final servicosConvertidos = await OrdemServico.buscarServicosDaInstituicaoAWS(instituicao.id);
 
       setState(() {
         _servicosPublicados = servicosConvertidos;
         _carregando = false;
       });
-    } on ApiException catch (e) {
-      debugPrint('Erro ao buscar serviços na AWS: ${e.message}');
+    } catch (e) {
+      debugPrint('Erro ao buscar serviços na AWS: $e');
       setState(() => _carregando = false);
     }
   }
@@ -115,48 +136,16 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
     }
   }
 
-  // --- UPDATE: Atualiza o status do serviço na AWS ---
-  Future<void> _atualizarStatusServico(
-      OrdemServico servicoVisual, StatusServico novoStatus) async {
-    if (servicoVisual.awsService == null) return;
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Atualizando status...')),
-      );
-    }
-
-    try {
-      final awsAtualizado = servicoVisual.awsService!.copyWith(
-        status_servico: novoStatus.texto,
-      );
-
-      final request = ModelMutations.update(awsAtualizado);
-      final response = await Amplify.API.mutate(request: request).response;
-
-      if (response.data != null) {
-        _buscarServicosAWS();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Status alterado para "${novoStatus.texto}"!'),
-            ),
-          );
-        }
-      }
-    } on ApiException catch (e) {
-      debugPrint('Erro ao atualizar status na AWS: ${e.message}');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar: ${e.message}')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final servicosEmAndamento = _servicosPublicados
+        .where((s) => s.status != StatusServico.concluido)
+        .toList();
+
+    final servicosConcluidos = _servicosPublicados
+        .where((s) => s.status == StatusServico.concluido)
+        .toList();
+
     return ListenableBuilder(
       listenable: GerenciadorSessaoUsuario.instancia,
       builder: (context, _) {
@@ -170,6 +159,8 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
               children: [
                 _buildHeader(context, instituicao),
                 _buildStats(instituicao),
+
+                // Seção 1: Serviços Ativos / Publicados
                 const Padding(
                   padding: EdgeInsets.fromLTRB(16, 20, 16, 8),
                   child: TituloSecao(titulo: 'Seus serviços publicados'),
@@ -182,28 +173,60 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
                           color: CoresApp.vermelhoAcao),
                     ),
                   )
-                else if (_servicosPublicados.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Nenhum serviço publicado ainda.'),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: _servicosPublicados
-                          .map((s) => Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: CardServicos(
-                                  servico: s,
-                                  onAlterarStatus: (novoStatus) =>
-                                      _atualizarStatusServico(s, novoStatus),
-                                  onDeletar: () => _deletarServico(s),
-                                ),
-                              ))
-                          .toList(),
+                else ...[
+                  if (servicosEmAndamento.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Text(
+                        'Nenhum serviço em aberto no momento.',
+                        style: TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: servicosEmAndamento
+                            .map((s) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: CardServicos(
+                                    servico: s,
+                                    onDeletar: () => _deletarServico(s),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
                     ),
+
+                  // Seção 2: Serviços Concluídos
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 20, 16, 8),
+                    child: TituloSecao(titulo: 'Serviços Concluídos'),
                   ),
+                  if (servicosConcluidos.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Text(
+                        'Nenhum serviço concluído ainda.',
+                        style: TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: servicosConcluidos
+                            .map((s) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: CardServicos(
+                                    servico: s,
+                                    onDeletar: () => _deletarServico(s),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                ],
               ],
             ),
           ),

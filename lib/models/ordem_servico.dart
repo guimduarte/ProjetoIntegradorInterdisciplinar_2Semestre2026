@@ -281,6 +281,12 @@ class OrdemServico {
 
       return itensNuvem.map<OrdemServico>((servicoAWS) {
         final ordem = OrdemServico.fromAWS(servicoAWS);
+        
+        debugPrint('--- SERVIÇO: ${servicoAWS.titulo} ---');
+        debugPrint('Lat/Lon Operário: $latitudeOperario, $longitudeOperario');
+        debugPrint('Lat/Lon Serviço: ${servicoAWS.latitude}, ${servicoAWS.longitude}');
+
+        // Se houver coordenadas da instituição e do operário...
 
         // Se houver coordenadas da instituição e do operário, calcula a distância real
         if (servicoAWS.latitude != null &&
@@ -302,9 +308,49 @@ class OrdemServico {
       return [];
     }
   }
-}
 
-/// Mocks mantidos para retrocompatibilidade em testes offline
-//final List<OrdemServico> mockOrdensServico = [...];
-//final List<OrdemServico> mockServicosRealizados = [...];
-//final List<OrdemServico> mockServicosAceitos = [...];
+  /// busca servicos logados
+  static Future<List<OrdemServico>> buscarServicosDaInstituicaoAWS(String idInstituicao) async {
+    try {
+      // O segredo está aqui: o parâmetro 'where' filtra diretamente no banco de dados!
+      final request = ModelQueries.list(
+        Service.classType,
+        where: Service.INSTITUICAO_ID.eq(idInstituicao), 
+      );
+      final response = await Amplify.API.query(request: request).response;
+      final itensNuvem = response.data?.items.whereType<Service>().toList() ?? [];
+
+      return itensNuvem.map<OrdemServico>((s) => OrdemServico.fromAWS(s)).toList();
+    } on ApiException catch (e) {
+      debugPrint('Erro ao buscar serviços da instituição: ${e.message}');
+      return [];
+    }
+  }
+
+  static Future<bool> atualizarStatusServicoAWS({
+    required String servicoId,
+    required StatusServico novoStatus,
+  }) async {
+    try {
+      final request = ModelQueries.get(
+        Service.classType,
+        ServiceModelIdentifier(id: servicoId),
+      );
+      final response = await Amplify.API.query(request: request).response;
+      final servicoAWS = response.data;
+
+      if (servicoAWS != null) {
+        final atualizado = servicoAWS.copyWith(
+          status_servico: novoStatus.texto,
+        );
+        final updateReq = ModelMutations.update(atualizado);
+        final updateRes = await Amplify.API.mutate(request: updateReq).response;
+        return updateRes.data != null;
+      }
+      return false;
+    } on ApiException catch (e) {
+      debugPrint('Erro ao atualizar status do serviço na AWS: ${e.message}');
+      return false;
+    }
+  }
+}

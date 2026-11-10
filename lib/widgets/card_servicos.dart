@@ -3,20 +3,14 @@ import '../models/ordem_servico.dart';
 import '../theme/tema_do_app.dart';
 import 'selo_de_complexidade.dart';
 
-/// Card de serviço exibido no feed do operário (US04.1) e no painel
-/// de serviços publicados pela instituição[cite: 14]. Quando [locked] é
-/// verdadeiro, o card é exibido de forma esmaecida com um cadeado,
-/// indicando que o operário não atende ao raio ou ao nível de
-/// experiência exigido (US04.2)[cite: 14].
+/// Card de serviço exibido no feed do operário e no painel
+/// de serviços publicados pela instituição.
 class CardServicos extends StatelessWidget {
   final OrdemServico servico;
   final bool locked;
   final String? lockedReason;
   final VoidCallback? onTap;
   final Widget? trailingAction;
-
-  /// Callbacks opcionais (exibem o menu de 3 pontos somente quando fornecidos)
-  final void Function(StatusServico status)? onAlterarStatus;
   final VoidCallback? onDeletar;
 
   const CardServicos({
@@ -26,14 +20,11 @@ class CardServicos extends StatelessWidget {
     this.lockedReason,
     this.onTap,
     this.trailingAction,
-    this.onAlterarStatus,
     this.onDeletar,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool temMenuAcoes = onAlterarStatus != null || onDeletar != null;
-
     return Opacity(
       opacity: locked ? 0.55 : 1,
       child: Material(
@@ -92,89 +83,17 @@ class CardServicos extends StatelessWidget {
                     if (locked)
                       const Icon(Icons.lock_outline_rounded,
                           size: 18, color: CoresApp.bloqueado)
-                    else if (temMenuAcoes)
-                      PopupMenuButton<String>(
+                    else if (onDeletar != null)
+                      IconButton(
                         icon: const Icon(
-                          Icons.more_vert_rounded,
+                          Icons.delete_outline_rounded,
                           size: 20,
-                          color: CoresApp.textoSecundario,
+                          color: CoresApp.vermelhoEscuro,
                         ),
-                        padding: EdgeInsets.zero,
+                        onPressed: onDeletar,
                         constraints: const BoxConstraints(),
-                        onSelected: (opcao) {
-                          if (opcao == 'deletar') {
-                            onDeletar?.call();
-                          } else if (opcao.startsWith('status_')) {
-                            final statusNome = opcao.replaceFirst('status_', '');
-                            final novoStatus = StatusServico.values.firstWhere(
-                              (s) => s.name == statusNome,
-                              orElse: () => StatusServico.aberto,
-                            );
-                            onAlterarStatus?.call(novoStatus);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          if (onAlterarStatus != null) ...[
-                            const PopupMenuItem<String>(
-                              enabled: false,
-                              height: 28,
-                              child: Text(
-                                'Alterar Status',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: CoresApp.textoSecundario,
-                                ),
-                              ),
-                            ),
-                            ...StatusServico.values.map(
-                              (s) => PopupMenuItem<String>(
-                                value: 'status_${s.name}',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      s == servico.status
-                                          ? Icons.radio_button_checked
-                                          : Icons.radio_button_unchecked,
-                                      size: 16,
-                                      color: s.cor,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      s.texto,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: s == servico.status
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            if (onDeletar != null) const PopupMenuDivider(),
-                          ],
-                          if (onDeletar != null)
-                            const PopupMenuItem<String>(
-                              value: 'deletar',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete_outline_rounded,
-                                      size: 18, color: CoresApp.vermelhoEscuro),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Excluir Serviço',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: CoresApp.vermelhoEscuro,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
+                        padding: EdgeInsets.zero,
+                        tooltip: 'Excluir Serviço',
                       ),
                   ],
                 ),
