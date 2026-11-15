@@ -34,6 +34,20 @@ class CardCandidaturaDeOperario extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool pendente = candidatura.status == StatusCandidatura.pendente;
     final bool aceito = candidatura.status == StatusCandidatura.aceita;
+    final bool concluida = candidatura.status == StatusCandidatura.concluida;
+
+    Color corBadge;
+    Color corBadgeTexto;
+    if (aceito) {
+      corBadge = CoresApp.verdeFundo;
+      corBadgeTexto = CoresApp.verdeEscuro;
+    } else if (concluida) {
+      corBadge = CoresApp.azulFundo;
+      corBadgeTexto = CoresApp.azulConfianca;
+    } else {
+      corBadge = CoresApp.vermelhoFundo;
+      corBadgeTexto = CoresApp.vermelhoEscuro;
+    }
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -45,11 +59,33 @@ class CardCandidaturaDeOperario extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            candidatura.servicoTitulo,
-            style: const TextStyle(fontSize: 11, color: CoresApp.textoSecundario),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: CoresApp.azulFundo,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: CoresApp.azulClaro.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.assignment_outlined,
+                    size: 16, color: CoresApp.azulConfianca),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    candidatura.servicoTitulo,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: CoresApp.azulConfianca,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           InkWell(
             onTap: () => _abrirPerfilOperario(context),
             borderRadius: BorderRadius.circular(8),
@@ -106,19 +142,15 @@ class CardCandidaturaDeOperario extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: aceito
-                            ? CoresApp.verdeFundo
-                            : CoresApp.vermelhoFundo,
+                        color: corBadge,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        aceito ? 'Aceita' : 'Recusada',
+                        candidatura.status.texto,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: aceito
-                              ? CoresApp.verdeEscuro
-                              : CoresApp.vermelhoEscuro,
+                          color: corBadgeTexto,
                         ),
                       ),
                     ),

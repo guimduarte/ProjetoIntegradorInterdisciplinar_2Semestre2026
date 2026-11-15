@@ -279,14 +279,14 @@ class OrdemServico {
       final response = await Amplify.API.query(request: request).response;
       final itensNuvem = response.data?.items.whereType<Service>().toList() ?? [];
 
-      return itensNuvem.map<OrdemServico>((servicoAWS) {
-        final ordem = OrdemServico.fromAWS(servicoAWS);
-        
-        debugPrint('--- SERVIÇO: ${servicoAWS.titulo} ---');
-        debugPrint('Lat/Lon Operário: $latitudeOperario, $longitudeOperario');
-        debugPrint('Lat/Lon Serviço: ${servicoAWS.latitude}, ${servicoAWS.longitude}');
+      // Retorna apenas os serviços com status 'Aberto' para o feed de novos serviços do operário
+      final servicosAbertos = itensNuvem.where((servicoAWS) {
+        final statusTexto = servicoAWS.status_servico ?? StatusServico.aberto.texto;
+        return statusTexto == StatusServico.aberto.texto;
+      }).toList();
 
-        // Se houver coordenadas da instituição e do operário...
+      return servicosAbertos.map<OrdemServico>((servicoAWS) {
+        final ordem = OrdemServico.fromAWS(servicoAWS);
 
         // Se houver coordenadas da instituição e do operário, calcula a distância real
         if (servicoAWS.latitude != null &&

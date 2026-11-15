@@ -556,17 +556,20 @@ class _InstituicaoCadastroFormState extends State<_InstituicaoCadastroForm> {
           final selecionado = _tiposSelecionados.contains(tipo);
           return Column(
             children: [
-              CheckboxListTile(
-                value: selecionado,
-                onChanged: (v) => setState(() {
-                  v == true
-                      ? _tiposSelecionados.add(tipo)
-                      : _tiposSelecionados.remove(tipo);
-                }),
-                title: Text(tipo.texto, style: const TextStyle(fontSize: 13)),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-                dense: true,
+              Material(
+                color: Colors.transparent,
+                child: CheckboxListTile(
+                  value: selecionado,
+                  onChanged: (v) => setState(() {
+                    v == true
+                        ? _tiposSelecionados.add(tipo)
+                        : _tiposSelecionados.remove(tipo);
+                  }),
+                  title: Text(tipo.texto, style: const TextStyle(fontSize: 13)),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
               ),
               if (selecionado)
                 Padding(

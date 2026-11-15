@@ -161,17 +161,20 @@ class _InstituicaoTelaNovoServicoState
                   ),
                   if (_escopo.permiteMarcarAvancado) ...[
                     const SizedBox(height: 8),
-                    CheckboxListTile(
-                      value: _marcarAvancado,
-                      onChanged: (v) =>
-                          setState(() => _marcarAvancado = v ?? false),
-                      title: const Text(
-                        'Marcar como Avançado (serviço extenso ou de alta complexidade, exige 5+ serviços)',
-                        style: TextStyle(fontSize: 11),
+                    Material(
+                      color: Colors.transparent,
+                      child: CheckboxListTile(
+                        value: _marcarAvancado,
+                        onChanged: (v) =>
+                            setState(() => _marcarAvancado = v ?? false),
+                        title: const Text(
+                          'Marcar como Avançado (serviço extenso ou de alta complexidade, exige 5+ serviços)',
+                          style: TextStyle(fontSize: 11),
+                        ),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
                       ),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
                     ),
                   ],
                 ],
@@ -205,9 +208,14 @@ class _InstituicaoTelaNovoServicoState
         const SnackBar(content: Text('Publicando serviço na AWS...')));
 
     try{
-      // 1. Cria o objeto do AWS Amplify (Substituindo o OrdemServico local)
+      final idInst = instituicao.id.isNotEmpty
+          ? instituicao.id
+          : (instituicao.emailInstitucional.isNotEmpty
+              ? instituicao.emailInstitucional
+              : instituicao.nome);
+
       final novoServicoAWS = Service(
-        instituicao_id: instituicao.id.isEmpty ? 'inst_001' : instituicao.id, // Fallback para o mock atual
+        instituicao_id: idInst,
         titulo: _tituloController.text.trim(),
         descricao: _descricaoController.text.trim().isEmpty
             ? 'Sem descrição adicional.'

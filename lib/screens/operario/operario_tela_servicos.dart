@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/candidatura_de_servico.dart';
 import '../../models/ordem_servico.dart';
 import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
@@ -25,26 +26,76 @@ class _OperarioTelaServicosState extends State<OperarioTelaServicos> {
     _carregarServicos();
   }
 
-  /// Busca os serviços na AWS e filtra pelos status 'aceito' e 'concluido'
+  /// Busca as candidaturas do operário logado na AWS para popular as abas 'Aceitos' e 'Realizados'
   Future<void> _carregarServicos() async {
     setState(() => _carregando = true);
 
     final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
+    final idOperario =
+        operario.email.isNotEmpty ? operario.email : operario.nome;
 
-    final todosServicos = await OrdemServico.buscarServicosAWS(
-      latitudeOperario: operario.latitude,
-      longitudeOperario: operario.longitude,
-    );
+    final candidaturas =
+        await CandidaturaDeServico.buscarCandidaturasDoOperarioAWS(idOperario);
+
+    final List<OrdemServico> aceitos = [];
+    final List<OrdemServico> realizados = [];
+
+    for (final c in candidaturas) {
+      OrdemServico ordemBase;
+      if (c.awsService != null) {
+        ordemBase = OrdemServico.fromAWS(c.awsService!);
+      } else {
+        ordemBase = OrdemServico(
+          id: c.servicoId,
+          titulo: c.servicoTitulo,
+          descricao: c.escopoPrincipal,
+          escopo: EscopoServico.manutencaoBasica,
+          instituicaoNome: 'Instituição Solidária',
+          instituicaoLocalizacao: 'São Paulo, SP',
+          horasEstimadas: 4.0,
+          status: c.status == StatusCandidatura.concluida
+              ? StatusServico.concluido
+              : StatusServico.aceito,
+        );
+      }
+
+      // Calcula pontos reais e horas com base na complexidade calculada pela AWS
+      final horas = ordemBase.horasEstimadas;
+      final pontosCalculados =
+          (horas * ordemBase.complexidade.pontosPorHora).round();
+
+      final ordemAtualizada = OrdemServico(
+        id: ordemBase.id,
+        titulo: ordemBase.titulo,
+        descricao: ordemBase.descricao,
+        escopo: ordemBase.escopo,
+        marcadoComoAvancado: ordemBase.marcadoComoAvancado,
+        instituicaoNome: ordemBase.instituicaoNome,
+        instituicaoLocalizacao: ordemBase.instituicaoLocalizacao,
+        latitude: ordemBase.latitude,
+        longitude: ordemBase.longitude,
+        distanciaKm: ordemBase.distanciaKm,
+        horasEstimadas: horas,
+        horasRealizadas: horas,
+        pontosGanhos: pontosCalculados,
+        status: c.status == StatusCandidatura.concluida
+            ? StatusServico.concluido
+            : StatusServico.aceito,
+        awsService: ordemBase.awsService,
+      );
+
+      if (c.status == StatusCandidatura.aceita) {
+        aceitos.add(ordemAtualizada);
+      } else if (c.status == StatusCandidatura.concluida) {
+        realizados.add(ordemAtualizada);
+      }
+    }
+
+    if (!mounted) return;
 
     setState(() {
-      _servicosAceitos = todosServicos
-          .where((s) => s.status == StatusServico.aceito)
-          .toList();
-
-      _servicosRealizados = todosServicos
-          .where((s) => s.status == StatusServico.concluido)
-          .toList();
-
+      _servicosAceitos = aceitos;
+      _servicosRealizados = realizados;
       _carregando = false;
     });
   }

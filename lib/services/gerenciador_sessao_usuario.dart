@@ -15,18 +15,40 @@ class GerenciadorSessaoUsuario extends ChangeNotifier {
   PerfilOperario? get operarioLogado => _operarioLogado;
   PerfilInstituicao? get instituicaoLogada => _instituicaoLogada;
 
-  /// Retorna o perfil do operário logado ou o objeto padrão caso não haja perfil carregado.
-  // PerfilOperario get operarioAtual => _operarioLogado ?? mockOperarioAtual;
+  /// Retorna o perfil do operário logado ou uma instância vazia segura durante o logout.
+  PerfilOperario get operarioAtual =>
+      _operarioLogado ??
+      const PerfilOperario(
+        id: '',
+        nome: 'Operário',
+        email: '',
+        telefone: '',
+        cpf: '',
+        localizacao: 'Localização não definida',
+        portfolioAnexado: false,
+        experienciasAnteriores: '',
+        escopos: [],
+        raioAtendimentoKm: 10,
+        servicosRealizados: 0,
+        pontos: 0,
+        avaliacaoMedia: 5.0,
+      );
 
-  //add gui -- perfil logado, sem mais mock
-  PerfilOperario get operarioAtual => _operarioLogado!;
-
-  /// Retorna o perfil da instituição logada ou o objeto padrão caso não haja perfil carregado.
-  // PerfilInstituicao get instituicaoAtual =>
-  //     _instituicaoLogada ?? mockInstituicaoAtual;
-
-  //add gui --sem mais mock instituicao
-  PerfilInstituicao get instituicaoAtual => _instituicaoLogada!;
+  /// Retorna o perfil da instituição logada ou uma instância vazia segura durante o logout.
+  PerfilInstituicao get instituicaoAtual =>
+      _instituicaoLogada ??
+      const PerfilInstituicao(
+        id: '',
+        nome: 'Instituição',
+        emailInstitucional: '',
+        telefone: '',
+        cnpj: '',
+        localizacao: 'Localização não definida',
+        tipos: [],
+        informacoesAdicionais: {},
+        totalDoado: 0.0,
+        servicosPublicados: 0,
+      );
 
   bool get temOperarioLogado => _operarioLogado != null;
   bool get temInstituicaoLogada => _instituicaoLogada != null;

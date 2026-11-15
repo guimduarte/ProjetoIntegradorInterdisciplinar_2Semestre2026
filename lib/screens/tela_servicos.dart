@@ -3,7 +3,7 @@ import '../models/profissional.dart';
 import '../theme/tema_do_app.dart';
 import '../widgets/card_profissional.dart';
 
-/// Tela que lista os profissionais/serviços disponíveis, com
+/// Tela que lista os profissionais/serviços disponíveis na AWS, com
 /// filtro por categoria e opção de solicitar atendimento.
 class TelaServicosDisponiveis extends StatefulWidget {
   final String categoriaInicial;
@@ -11,7 +11,8 @@ class TelaServicosDisponiveis extends StatefulWidget {
   const TelaServicosDisponiveis({super.key, this.categoriaInicial = 'Todos'});
 
   @override
-  State<TelaServicosDisponiveis> createState() => _TelaServicosDisponiveisState();
+  State<TelaServicosDisponiveis> createState() =>
+      _TelaServicosDisponiveisState();
 }
 
 class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
@@ -24,14 +25,52 @@ class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
   ];
 
   late String _categoriaSelecionada = widget.categoriaInicial;
+  String _termoBusca = '';
+  final TextEditingController _buscaController = TextEditingController();
+
+  List<Profissional> _profissionaisAWS = [];
+  bool _carregando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarProfissionaisAWS();
+  }
+
+  @override
+  void dispose() {
+    _buscaController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _carregarProfissionaisAWS() async {
+    setState(() => _carregando = true);
+    final lista = await Profissional.buscarProfissionaisAWS();
+    if (!mounted) return;
+    setState(() {
+      _profissionaisAWS = lista;
+      _carregando = false;
+    });
+  }
 
   List<Profissional> get _profissionaisFiltrados {
-    if (_categoriaSelecionada == 'Todos') return mockProfissionais;
-    return mockProfissionais
-        .where((p) => p.especialidade.toLowerCase().contains(
-              _categoriaSelecionada.toLowerCase().substring(0, 5),
-            ))
-        .toList();
+    return _profissionaisAWS.where((p) {
+      final atendeCategoria = _categoriaSelecionada == 'Todos' ||
+          p.especialidade.toLowerCase().contains(
+                _categoriaSelecionada.toLowerCase().substring(
+                      0,
+                      _categoriaSelecionada.length > 5
+                          ? 5
+                          : _categoriaSelecionada.length,
+                    ),
+              );
+
+      final atendeBusca = _termoBusca.isEmpty ||
+          p.nome.toLowerCase().contains(_termoBusca.toLowerCase()) ||
+          p.especialidade.toLowerCase().contains(_termoBusca.toLowerCase());
+
+      return atendeCategoria && atendeBusca;
+    }).toList();
   }
 
   @override
@@ -39,22 +78,27 @@ class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Serviços disponíveis'),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.tune_rounded),
-          ),
-        ],
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: TextField(
+              controller: _buscaController,
+              onChanged: (v) => setState(() => _termoBusca = v),
               decoration: InputDecoration(
-                hintText: 'Filtrar por especialidade',
+                hintText: 'Filtrar por especialidade ou nome',
                 prefixIcon:
                     const Icon(Icons.search, color: CoresApp.textoSecundario),
+                suffixIcon: _termoBusca.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _buscaController.clear();
+                          setState(() => _termoBusca = '');
+                        },
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -75,17 +119,21 @@ class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
                 return ChoiceChip(
                   label: Text(categoria),
                   selected: selecionado,
-                  onSelected: (_) => setState(() => _categoriaSelecionada = categoria),
+                  onSelected: (_) =>
+                      setState(() => _categoriaSelecionada = categoria),
                   selectedColor: CoresApp.vermelhoAcao,
                   backgroundColor: CoresApp.branco,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: selecionado ? CoresApp.branco : CoresApp.azulConfianca,
+                    color:
+                        selecionado ? CoresApp.branco : CoresApp.azulConfianca,
                   ),
                   shape: StadiumBorder(
                     side: BorderSide(
-                      color: selecionado ? CoresApp.vermelhoAcao : CoresApp.azulConfianca,
+                      color: selecionado
+                          ? CoresApp.vermelhoAcao
+                          : CoresApp.azulConfianca,
                     ),
                   ),
                 );
@@ -93,27 +141,50 @@ class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              itemCount: _profissionaisFiltrados.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final profissional = _profissionaisFiltrados[index];
-                return CardProfissional(
-                  profissional: profissional,
-                  onRequest: () => _showRequestConfirmation(context, profissional),
-                );
-              },
-            ),
+            child: _carregando
+                ? const Center(
+                    child: CircularProgressIndicator(
+                        color: CoresApp.vermelhoAcao),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _carregarProfissionaisAWS,
+                    color: CoresApp.vermelhoAcao,
+                    child: _profissionaisFiltrados.isEmpty
+                        ? ListView(
+                            children: [
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.5,
+                                child: const Center(
+                                  child: Text(
+                                    'Nenhum profissional cadastrado para esta categoria.',
+                                    style: TextStyle(
+                                      color: CoresApp.textoSecundario,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                            itemCount: _profissionaisFiltrados.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final profissional =
+                                  _profissionaisFiltrados[index];
+                              return CardProfissional(
+                                profissional: profissional,
+                                onRequest: () => _showRequestConfirmation(
+                                    context, profissional),
+                              );
+                            },
+                          ),
+                  ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: CoresApp.vermelhoAcao,
-        foregroundColor: CoresApp.branco,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Oferecer meu serviço'),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
@@ -142,7 +213,8 @@ class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
     );
   }
 
-  void _showRequestConfirmation(BuildContext context, Profissional professional) {
+  void _showRequestConfirmation(
+      BuildContext context, Profissional professional) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -162,7 +234,8 @@ class _TelaServicosDisponiveisState extends State<TelaServicosDisponiveis> {
             Text(
               'Sua entidade será conectada com ${professional.nome}. '
               'Confirme para enviar os detalhes da obra.',
-              style: const TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
+              style:
+                  const TextStyle(color: CoresApp.textoSecundario, fontSize: 13),
             ),
             const SizedBox(height: 16),
             SizedBox(

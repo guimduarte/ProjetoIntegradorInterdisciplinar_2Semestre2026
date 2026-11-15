@@ -214,7 +214,7 @@ class TelaPrincipal extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Profissionais em destaque em sua região',
+            'Profissionais em destaque na sua região',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -222,12 +222,42 @@ class TelaPrincipal extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          ...mockProfissionais.take(2).map(
-                (p) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: CardProfissional(profissional: p, compact: true),
-                ),
-              ),
+          FutureBuilder<List<Profissional>>(
+            future: Profissional.buscarProfissionaisAWS(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child:
+                        CircularProgressIndicator(color: CoresApp.azulConfianca),
+                  ),
+                );
+              }
+              final profissionais = snapshot.data ?? [];
+              if (profissionais.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'Nenhum profissional cadastrado na sua região ainda.',
+                    style: TextStyle(
+                        fontSize: 12, color: CoresApp.textoSecundario),
+                  ),
+                );
+              }
+              return Column(
+                children: profissionais
+                    .take(3)
+                    .map(
+                      (p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: CardProfissional(profissional: p, compact: true),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
         ],
       ),
     );

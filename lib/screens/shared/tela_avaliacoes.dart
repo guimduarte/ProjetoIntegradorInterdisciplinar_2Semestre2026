@@ -10,17 +10,6 @@ class _Review {
   const _Review(this.autor, this.estrelas, this.comentario);
 }
 
-const List<_Review> _reviewsOperario = [
-  _Review('Creche Sementinha do Bem', 5, 'Muito pontual e cuidadoso com os detalhes, recomendamos!'),
-  _Review('Projeto Educar Mais', 5, 'Serviço rápido e de ótima qualidade.'),
-  _Review('Cozinha Solidária Pão Nosso', 4, 'Bom trabalho, apenas atrasou um pouco o início.'),
-];
-
-const List<_Review> _reviewsInstituicao = [
-  _Review('Carlos Alberto', 5, 'Instituição organizada, materiais prontos no dia combinado.'),
-  _Review('João Ricardo', 4, 'Comunicação clara sobre o escopo do serviço.'),
-];
-
 /// Tela "Avaliar Serviços", presente no menu inferior de ambos os
 /// perfis (ÉPICO 02 - US02.1): mostra a reputação recebida e permite
 /// avaliar a outra ponta após a conclusão de um serviço.
@@ -31,19 +20,20 @@ class TelaAvaliacoes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reviews = ehInstituicao ? _reviewsInstituicao : _reviewsOperario;
-    final nomeExibicao = ehInstituicao 
-        ? GerenciadorSessaoUsuario.instancia.instituicaoAtual.nome 
+    final List<_Review> reviews = const [];
+
+    final nomeExibicao = ehInstituicao
+        ? GerenciadorSessaoUsuario.instancia.instituicaoAtual.nome
         : GerenciadorSessaoUsuario.instancia.operarioAtual.nome;
 
-    final media = ehInstituicao 
-        ? 4.6 
+    final media = ehInstituicao
+        ? 5.0
         : GerenciadorSessaoUsuario.instancia.operarioAtual.avaliacaoMedia;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Avaliar Serviços'),
-        automaticallyImplyLeading: false, // desativar a seta de voltar da topbar
+        automaticallyImplyLeading: false,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -58,9 +48,11 @@ class TelaAvaliacoes extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Text(nomeExibicao,
-                    style: const TextStyle(
-                        fontSize: 13, color: CoresApp.textoSecundario)),
+                Text(
+                  nomeExibicao,
+                  style: const TextStyle(
+                      fontSize: 13, color: CoresApp.textoSecundario),
+                ),
                 const SizedBox(height: 6),
                 Text(
                   media.toStringAsFixed(1),
@@ -91,7 +83,27 @@ class TelaAvaliacoes extends StatelessWidget {
           const SizedBox(height: 20),
           const TituloSecao(titulo: 'Avaliações recebidas'),
           const SizedBox(height: 10),
-          ...reviews.map((r) => Padding(
+          if (reviews.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: CoresApp.fundoTela,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: CoresApp.borda),
+              ),
+              child: const Text(
+                'Nenhuma avaliação recebida ainda.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: CoresApp.textoSecundario,
+                ),
+              ),
+            )
+          else
+            ...reviews.map(
+              (r) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Container(
                   padding: const EdgeInsets.all(14),
@@ -132,7 +144,8 @@ class TelaAvaliacoes extends StatelessWidget {
                     ],
                   ),
                 ),
-              )),
+              ),
+            ),
         ],
       ),
     );

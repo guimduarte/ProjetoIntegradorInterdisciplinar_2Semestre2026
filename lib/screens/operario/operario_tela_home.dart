@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/candidatura_de_servico.dart';
 import '../../models/nivel_experiencia.dart';
 import '../../models/operario.dart';
 import '../../models/ordem_servico.dart';
@@ -24,6 +25,7 @@ class OperarioTelaHome extends StatefulWidget {
 
 class _OperarioTelaHomeState extends State<OperarioTelaHome> {
   List<OrdemServico> _servicos = [];
+  Set<String> _candidatadosServicosIds = {};
   bool _carregando = true;
   EscopoServico? _filtroEscopo;
   String _termoBusca = '';
@@ -47,14 +49,26 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
 
     final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
 
-    // A busca na AWS e o cálculo Haversine acontecem dentro de OrdemServico!
+    // 1. A busca na AWS e o cálculo Haversine acontecem dentro de OrdemServico
     final lista = await OrdemServico.buscarServicosAWS(
       latitudeOperario: operario.latitude,
       longitudeOperario: operario.longitude,
     );
 
+    // 2. Busca as candidaturas do operário logado para saber onde ele já se candidatou
+    Set<String> idsCandidatados = {};
+    if (operario.email.isNotEmpty) {
+      final candidaturas = await CandidaturaDeServico.buscarCandidaturasAWS(
+        operarioId: operario.email,
+      );
+      idsCandidatados = candidaturas.map((c) => c.servicoId).toSet();
+    }
+
+    if (!mounted) return;
+
     setState(() {
       _servicos = lista;
+      _candidatadosServicosIds = idsCandidatados;
       _carregando = false;
     });
   }
@@ -137,6 +151,8 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
                               servico: s,
                               locked: !estaApto,
                               lockedReason: motivo,
+                              jaCandidatado:
+                                  _candidatadosServicosIds.contains(s.id),
                               onTap: () async {
                                 final candidatou = await Navigator.of(context).push<bool>(
                                   MaterialPageRoute(

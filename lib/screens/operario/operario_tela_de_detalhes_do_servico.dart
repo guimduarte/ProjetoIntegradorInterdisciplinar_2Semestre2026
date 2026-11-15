@@ -22,6 +22,26 @@ class _OperarioTelaDeDetalhesDoServicoState
   bool _candidatado = false;
   bool _enviando = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _verificarCandidaturaExistente();
+  }
+
+  Future<void> _verificarCandidaturaExistente() async {
+    final operario = GerenciadorSessaoUsuario.instancia.operarioAtual;
+    if (operario.email.isNotEmpty) {
+      final candidaturas = await CandidaturaDeServico.buscarCandidaturasAWS(
+        operarioId: operario.email,
+      );
+      final jaCandidatou =
+          candidaturas.any((c) => c.servicoId == widget.servico.id);
+      if (jaCandidatou && mounted) {
+        setState(() => _candidatado = true);
+      }
+    }
+  }
+
   void _abrirPerfilInstituicao(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(

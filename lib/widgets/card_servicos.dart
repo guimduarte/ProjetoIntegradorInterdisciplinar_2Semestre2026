@@ -9,6 +9,7 @@ class CardServicos extends StatelessWidget {
   final OrdemServico servico;
   final bool locked;
   final String? lockedReason;
+  final bool jaCandidatado;
   final VoidCallback? onTap;
   final Widget? trailingAction;
   final VoidCallback? onDeletar;
@@ -18,6 +19,7 @@ class CardServicos extends StatelessWidget {
     required this.servico,
     this.locked = false,
     this.lockedReason,
+    this.jaCandidatado = false,
     this.onTap,
     this.trailingAction,
     this.onDeletar,
@@ -112,7 +114,13 @@ class CardServicos extends StatelessWidget {
                       icon: Icons.schedule_rounded,
                       texto: '~${servico.horasEstimadas.toStringAsFixed(0)} h',
                     ),
-                    if (servico.status != StatusServico.aberto)
+                    if (jaCandidatado)
+                      const _InformacaoTag(
+                        icon: Icons.check_circle_rounded,
+                        texto: 'Candidatura enviada ✓',
+                        color: CoresApp.verdeEscuro,
+                      )
+                    else if (servico.status != StatusServico.aberto)
                       _InformacaoTag(
                         icon: Icons.flag_outlined,
                         texto: servico.status.texto,
