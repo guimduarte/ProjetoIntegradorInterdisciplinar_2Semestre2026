@@ -88,7 +88,7 @@ class _OperarioTelaHomeState extends State<OperarioTelaHome> {
               s.instituicaoNome.toLowerCase().contains(_termoBusca.toLowerCase());
 
               //filtro raio
-              final dentroDoRaio = s.distanciaKm <= operario.raioAtendimentoKm
+              // final dentroDoRaio = s.distanciaKm <= operario.raioAtendimentoKm
 
           return atendeEscopo && atendeBusca;
         }).toList();
