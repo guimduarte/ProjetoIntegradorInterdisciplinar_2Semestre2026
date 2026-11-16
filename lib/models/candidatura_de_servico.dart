@@ -219,6 +219,13 @@ class CandidaturaDeServico {
   static Future<List<CandidaturaDeServico>> buscarCandidaturasDoOperarioAWS(
       String identificadorOperario) async {
     try {
+      final busca = identificadorOperario.trim().toLowerCase();
+      
+      // Se o identificador estiver vazio, retorna lista vazia imediatamente
+      if (busca.isEmpty) {
+        return [];
+      }
+
       final requestApp = ModelQueries.list(Application.classType);
       final responseApp = await Amplify.API.query(request: requestApp).response;
       final itensApp =
@@ -234,14 +241,14 @@ class CandidaturaDeServico {
         for (final s in itensServ) s.id: s
       };
 
-      final busca = identificadorOperario.trim().toLowerCase();
       final candidaturasDoOperario = <CandidaturaDeServico>[];
 
       for (final aws in itensApp) {
         final opId = (aws.operario_id ?? '').trim().toLowerCase();
         final opNome = (aws.resumo_operario_nome ?? '').trim().toLowerCase();
 
-        if (opId != busca && opNome != busca && !opId.contains(busca)) {
+        // Alterado para comparação exata (==) e segura
+        if (opId != busca && opNome != busca) {
           continue; // Ignora candidaturas de outros operários
         }
 
