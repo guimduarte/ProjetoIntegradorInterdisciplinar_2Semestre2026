@@ -214,19 +214,25 @@ class _InstituicaoTelaNovoServicoState
               ? instituicao.emailInstitucional
               : instituicao.nome);
 
+      final horasDigitadas =
+          double.tryParse(_horasController.text.trim()) ?? 4.0;
+      final textoDescricao = _descricaoController.text.trim().isEmpty
+          ? 'Sem descrição adicional.'
+          : _descricaoController.text.trim();
+      final descricaoComHoras =
+          '[Horas: ${horasDigitadas.round()}h] $textoDescricao';
+
       final novoServicoAWS = Service(
         instituicao_id: idInst,
         titulo: _tituloController.text.trim(),
-        descricao: _descricaoController.text.trim().isEmpty
-            ? 'Sem descrição adicional.'
-            : _descricaoController.text.trim(),
-        escopo_servico: _escopo.texto, // Puxa a string da sua extension
-        complexidade: _complexidadeAtual.texto, 
-        nivel_experiencia_exigido: _complexidadeAtual.nivelMinimoExigido.texto,
+        descricao: descricaoComHoras,
+        escopo_servico: _escopo.texto,
+        complexidade: _complexidadeAtual.texto,
+        nivel_experiencia_exigido:
+            _complexidadeAtual.nivelMinimoExigido.texto,
         endereco_texto: instituicao.localizacao,
         status_servico: StatusServico.aberto.texto,
         instituicao_nome: instituicao.nome,
-        // Você pode passar a latitude e longitude se já tiver
         latitude: instituicao.latitude,
         longitude: instituicao.longitude,
       );

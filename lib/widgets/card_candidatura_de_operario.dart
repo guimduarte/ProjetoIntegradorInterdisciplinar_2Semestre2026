@@ -10,6 +10,7 @@ class CardCandidaturaDeOperario extends StatelessWidget {
   final VoidCallback onRecusar;
   final VoidCallback? onIniciarServico;
   final VoidCallback? onCancelar;
+  final VoidCallback? onAvaliar;
 
   const CardCandidaturaDeOperario({
     super.key,
@@ -18,6 +19,7 @@ class CardCandidaturaDeOperario extends StatelessWidget {
     required this.onRecusar,
     this.onIniciarServico,
     this.onCancelar,
+    this.onAvaliar,
   });
 
   void _abrirPerfilOperario(BuildContext context) {
@@ -221,6 +223,24 @@ class CardCandidaturaDeOperario extends StatelessWidget {
                   child: const Text('Iniciar serviço', style: TextStyle(fontSize: 12, color: Colors.white)),
                 ),
               ],
+            ),
+          ],
+
+          // Ações para Candidatura Concluída (Avaliar Operário)
+          if (concluida && onAvaliar != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onAvaliar,
+                icon: const Icon(Icons.star_outline_rounded, size: 16),
+                label: const Text('Avaliar Operário', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: CoresApp.amareloEscuro,
+                  side: const BorderSide(color: CoresApp.amareloSolidario),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
             ),
           ],
         ],

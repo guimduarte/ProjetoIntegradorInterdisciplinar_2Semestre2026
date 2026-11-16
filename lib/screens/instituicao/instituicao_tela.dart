@@ -22,8 +22,6 @@ class _InstituicaoTelaState extends State<InstituicaoTela> {
   static const _screens = [
     InstituicaoTelaHome(),
     InstituicaoTelaChamados(),
-    TelaAvaliacoes(ehInstituicao: true),
-    //NotificationsScreen(isInstituicao: true),
     TelaPerfil(ehInstituicao: true),
   ];
 
@@ -40,8 +38,6 @@ class _InstituicaoTelaState extends State<InstituicaoTela> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Início'),
           BottomNavigationBarItem(icon: Icon(Icons.inbox_outlined), label: 'Chamados'),
-          BottomNavigationBarItem(icon: Icon(Icons.star_rate_rounded), label: 'Avaliações'),
-          //BottomNavigationBarItem(icon: Icon(Icons.notifications_none_rounded), label: 'Notificações'),
           BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), label: 'Perfil'),
         ],
         selectedItemColor: CoresApp.vermelhoAcao,

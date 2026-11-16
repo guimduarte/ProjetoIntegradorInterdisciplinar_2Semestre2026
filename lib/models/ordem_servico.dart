@@ -194,7 +194,7 @@ class OrdemServico {
   final double? longitude;
   double distanciaKm;
   final double horasEstimadas;
-  final int candidatos;
+  int candidatos;
   StatusServico status;
   final double? horasRealizadas;
   final int? pontosGanhos;
@@ -231,10 +231,19 @@ class OrdemServico {
       orElse: () => StatusServico.aberto,
     );
 
+    double horas = 4.0;
+    String descLimpa = aws.descricao ?? 'Sem descrição';
+    if (descLimpa.startsWith('[Horas: ') && descLimpa.contains('h]')) {
+      final partes = descLimpa.split('h]');
+      final numStr = partes.first.replaceAll('[Horas: ', '').trim();
+      horas = double.tryParse(numStr) ?? 4.0;
+      descLimpa = partes.sublist(1).join('h]').trim();
+    }
+
     return OrdemServico(
       id: aws.id,
       titulo: aws.titulo ?? 'sem_titulo',
-      descricao: aws.descricao ?? 'Sem descrição',
+      descricao: descLimpa,
       escopo: escopoConvertido,
       marcadoComoAvancado: aws.complexidade == 'Avançado',
       instituicaoNome: aws.instituicao_nome ?? 'Instituição',
@@ -242,7 +251,7 @@ class OrdemServico {
       latitude: aws.latitude,
       longitude: aws.longitude,
       distanciaKm: 0.0,
-      horasEstimadas: 4.0,
+      horasEstimadas: horas,
       candidatos: 0,
       status: statusConvertido,
       awsService: aws,
@@ -268,16 +277,32 @@ class OrdemServico {
   // MÉTODO COMPARTIMENTALIZADO: BUSCA NA AWS + CÁLCULO DE DISTÂNCIA HAVERSINE
   // =========================================================================
 
-  /// Consulta todos os serviços no DynamoDB via AWS Amplify e calcula a
-  /// distância geográfica exata até o operário logado se as coordenadas existirem.
+  /// Consulta todos os serviços no DynamoDB via AWS Amplify, calcula o número de candidatos
+  /// reais e a distância geográfica exata até o operário logado se as coordenadas existirem.
   static Future<List<OrdemServico>> buscarServicosAWS({
     double? latitudeOperario,
     double? longitudeOperario,
   }) async {
     try {
-      final request = ModelQueries.list(Service.classType);
-      final response = await Amplify.API.query(request: request).response;
-      final itensNuvem = response.data?.items.whereType<Service>().toList() ?? [];
+      final requestServ = ModelQueries.list(Service.classType);
+      final responseServ = await Amplify.API.query(request: requestServ).response;
+      final itensNuvem = responseServ.data?.items.whereType<Service>().toList() ?? [];
+
+      // Consulta as candidaturas na AWS para contar candidatos reais por serviço
+      final Map<String, int> contagemCandidatos = {};
+      try {
+        final requestApp = ModelQueries.list(Application.classType);
+        final responseApp = await Amplify.API.query(request: requestApp).response;
+        final candidaturasNuvem =
+            responseApp.data?.items.whereType<Application>().toList() ?? [];
+
+        for (final app in candidaturasNuvem) {
+          contagemCandidatos[app.service_id] =
+              (contagemCandidatos[app.service_id] ?? 0) + 1;
+        }
+      } catch (eApp) {
+        debugPrint('Aviso ao contar candidatos: $eApp');
+      }
 
       // Retorna apenas os serviços com status 'Aberto' para o feed de novos serviços do operário
       final servicosAbertos = itensNuvem.where((servicoAWS) {
@@ -287,6 +312,7 @@ class OrdemServico {
 
       return servicosAbertos.map<OrdemServico>((servicoAWS) {
         final ordem = OrdemServico.fromAWS(servicoAWS);
+        ordem.candidatos = contagemCandidatos[servicoAWS.id] ?? 0;
 
         // Se houver coordenadas da instituição e do operário, calcula a distância real
         if (servicoAWS.latitude != null &&

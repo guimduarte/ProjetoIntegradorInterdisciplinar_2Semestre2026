@@ -4,6 +4,7 @@ import '../../models/nivel_experiencia.dart';
 import '../../models/operario.dart';
 import '../../services/gerenciador_sessao_usuario.dart';
 import '../../services/servico_autenticacao.dart';
+import '../../services/servico_avaliacoes.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/titulo_secao.dart';
 
@@ -221,6 +222,9 @@ class _TelaVisualizacaoPerfilOperarioState
   }
 
   Widget _buildHeader() {
+    final mediaCalculada = ServicoAvaliacoes.instancia
+        .calcularMediaOperario(_operario!.email);
+
     return Row(
       children: [
         CircleAvatar(
@@ -272,7 +276,7 @@ class _TelaVisualizacaoPerfilOperarioState
                       size: 16, color: CoresApp.amareloSolidario),
                   const SizedBox(width: 2),
                   Text(
-                    _operario!.avaliacaoMedia.toStringAsFixed(1),
+                    mediaCalculada.toStringAsFixed(1),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,

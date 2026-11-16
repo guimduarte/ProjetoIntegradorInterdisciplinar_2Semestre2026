@@ -227,22 +227,6 @@ class _ListaDeServicos extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _avaliarServico(context, s),
-                    icon: const Icon(Icons.star_border_rounded, size: 16),
-                    label: const Text(
-                      'Avaliar instituição',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: CoresApp.amareloEscuro,
-                      side: const BorderSide(color: CoresApp.amareloSolidario),
-                    ),
-                  ),
-                ),
               ] else
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -291,64 +275,6 @@ class _ListaDeServicos extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _avaliarServico(BuildContext context, OrdemServico s) {
-    int estrelas = 5;
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Avaliar ${s.instituicaoNome}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (i) {
-                  final filled = i < estrelas;
-                  return IconButton(
-                    onPressed: () => setModalState(() => estrelas = i + 1),
-                    icon: Icon(
-                      filled ? Icons.star_rounded : Icons.star_border_rounded,
-                      color: CoresApp.amareloSolidario,
-                      size: 32,
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Avaliação enviada. Obrigado!'),
-                      ),
-                    );
-                  },
-                  child: const Text('Enviar avaliação'),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

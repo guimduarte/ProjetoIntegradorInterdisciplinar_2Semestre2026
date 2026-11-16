@@ -4,6 +4,7 @@ import '../../models/ordem_servico.dart';
 import '../../services/gerenciador_sessao_usuario.dart';
 import '../../theme/tema_do_app.dart';
 import '../../widgets/card_candidatura_de_operario.dart';
+import '../../widgets/modal_avaliar_operario.dart';
 import 'modal_controle_chamado.dart';
 
 class InstituicaoTelaChamados extends StatefulWidget {
@@ -251,6 +252,12 @@ class _InstituicaoTelaChamadosState extends State<InstituicaoTelaChamados> {
                                   candidatura: a,
                                   onAceitar: () {},
                                   onRecusar: () {},
+                                  onAvaliar: () {
+                                    ModalAvaliarOperario.exibir(
+                                      context,
+                                      candidatura: a,
+                                    );
+                                  },
                                 ),
                               )),
                         ],
