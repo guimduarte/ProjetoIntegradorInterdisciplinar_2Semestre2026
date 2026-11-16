@@ -179,10 +179,9 @@ class CandidaturaDeServico {
       final Set<String> chavesVistas = {};
 
       for (final aws in itensApp) {
-        if (instituicaoId != null && instituicaoId.isNotEmpty) {
-          if (!mapaServicos.containsKey(aws.service_id)) {
-            continue; // Ignora candidaturas de serviços de outras instituições
-          }
+        // Oculta candidaturas de serviços que foram apagados do banco de dados
+        if (!mapaServicos.containsKey(aws.service_id)) {
+          continue;
         }
 
         // Evita duplicatas pela chave do ID da candidatura ou do par servico_operario

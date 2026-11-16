@@ -220,7 +220,6 @@ class _InstituicaoTelaHomeState extends State<InstituicaoTelaHome> {
                                   padding: const EdgeInsets.only(bottom: 10),
                                   child: CardServicos(
                                     servico: s,
-                                    onDeletar: () => _deletarServico(s),
                                   ),
                                 ))
                             .toList(),
